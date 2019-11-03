@@ -33,7 +33,7 @@ public class Trade : SmartContract
         Price = price;
     }
 
-    public Tx Buy(ulong amount)
+    public Transaction Buy(ulong amount)
     {
         Assert(Message.Sender != Owner);
         Assert(OwnerAction != "buy", "Invalid operation, sell offers only.");
@@ -50,25 +50,38 @@ public class Trade : SmartContract
         // Transfer CRS amount * Price to seller
         Transfer(Owner, amount * Price);
         // Any remainder transfer back to buyer
+        // Balance record of who deposited x amount needs to be made for withdraw abilities
         if (Balance > 0)
         {
             Transfer(Message.Sender, Balance);
         }
 
-        // Update Buyer
-        // Update Seller
-        // Build and return txResult
-        var txResult = new Tx() {TransactionId = "asdf", Buyer = GetBuyer(Message.Sender), Seller = GetSeller(Owner) };
+        // Create, Set Buyer
+        Buyer buyer = NewBuyer(Message.Sender, Token, amount, amount * Price, Balance);
+        SetBuyer(buyer);
+
+        // Get, Edit, Set Seller
+        Seller seller = GetSeller(Owner);
+        seller.AmountRecieved = amount * Price;
+        seller.AmountSold = amount;
+        seller.Balance -= amount;
+        SetSeller(seller);
+
+        // Build Transaction Result
+        var txResult = new Transaction() { Buyer = buyer, Seller = seller };
+
+        // Save TransactionResult
+        SetNewTransaction(txResult);
         
         return txResult;
     }
 
-    public Tx Sell(ulong amount)
+    public Transaction Sell(ulong amount)
     {
         Assert(Message.Sender != Owner);
         Assert(OwnerAction != "sell", "Invalid operation, buy offers only.");
 
-        var txResult = new Tx() {TransactionId = "asdf", Buyer = GetBuyer(Message.Sender), Seller = GetSeller(Owner) };
+        var txResult = new Transaction() { Buyer = GetBuyer(Message.Sender), Seller = GetSeller(Owner) };
 
         return txResult;
     }
@@ -98,23 +111,24 @@ public class Trade : SmartContract
         private set => PersistentState.SetAddress(nameof(Owner), value);
     }
 
-    public Tx[] GetTransactions()
+    public Transaction[] GetTransactions()
     {
-        return PersistentState.GetArray<Tx>("Transactions");
+        return PersistentState.GetArray<Transaction>("Transactions");
     }
 
-    public void SetNewTransaction(Tx test) {
+    private void SetNewTransaction(Transaction transaction) 
+    {
         var transactions = GetTransactions();
         var currentLength = transactions.Length;
         var newLength = transactions.Length + 1;
-        var newTransactions = new Tx[newLength];
+        var newTransactions = new Transaction[newLength];
 
         for (var i = 0; i < currentLength; i++)
         {
             newTransactions[i] = transactions[i];
         }
 
-        newTransactions[newLength] = test;
+        newTransactions[newLength] = transaction;
 
         PersistentState.SetArray("Transactions", newTransactions);
     }
@@ -123,25 +137,59 @@ public class Trade : SmartContract
         return PersistentState.GetStruct<Buyer>($"Buyer:{buyer}");
     }
 
+    private void SetBuyer(Buyer buyer) {
+        PersistentState.SetStruct($"Buyer:{buyer.Address}", buyer);
+    }
+
     public Seller GetSeller(Address seller) {
         return PersistentState.GetStruct<Seller>($"Seller:{seller}");
     }
 
+    private void SetSeller(Seller seller) {
+        PersistentState.SetStruct($"Seller:{seller.Address}", seller);
+    }
+
+    private Buyer NewBuyer(Address address, Address token, ulong amountPurchasd, ulong amountSpent, ulong balance)
+    {
+        return new Buyer 
+        {
+            Address = address,
+            Token = token,
+            AmountPurchased = amountPurchasd,
+            AmountSpent = amountSpent,
+            Balance = balance
+        };
+    }
+
+    private Seller NewSeller(Address address, Address token, ulong amountSold, ulong amountRevieved, ulong balance)
+    {
+        return new Seller 
+        {
+            Address = address,
+            Token = token,
+            AmountSold = amountSold,
+            AmountRecieved = amountRevieved,
+            Balance = balance
+        };
+    }
+
     public struct Buyer {
         public Address Address;
-        public ulong Amount;
-        public ulong AmountBought;
+        public Address Token;
+        public ulong AmountPurchased;
+        public ulong AmountSpent;
+        public ulong Balance;
     }
 
     public struct Seller {
         public Address Address;
-        public ulong Amount;
+        public Address Token;
         public ulong AmountSold;
+        public ulong AmountRecieved;
+        public ulong Balance;
     }
 
-    public struct Tx {
-        [Index]
-        public string TransactionId;
+    public struct Transaction {
         public Buyer Buyer;
         public Seller Seller;
     }
