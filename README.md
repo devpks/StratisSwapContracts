@@ -3,10 +3,10 @@ Cirrus Decentralized Exchange
 
 ## Four Contracts
 
-1. [OrderBooks](#1.-orderbooks)
-2. [OrderBook](#2.-orderbook)
-3. [Trade](#3.-trade)
-4. [Swap Wallet](#4.-swap-wallet)
+1. [OrderBooks](#1-orderbooks)
+2. [OrderBook](#2-orderbook)
+3. [Trade](#3-trade)
+4. [Swap Wallet](#4-swap-wallet)
 
 ## 1. OrderBooks
 Keeps record of all orderbooks (tokens) being traded. Easy single entry point to find any given orderbook's address.
