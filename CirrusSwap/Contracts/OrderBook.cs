@@ -16,6 +16,11 @@ public class OrderBook : SmartContract
         private set => PersistentState.SetAddress(nameof(Token), value);
     }
 
+    public ulong CurrentPrice {
+        get => PersistentState.GetUInt64(nameof(CurrentPrice));
+        private set => PersistentState.SetUInt64(nameof(CurrentPrice), value);
+    }
+
     public Order[] GetOrdersAtPrice(ulong price) {
         // OpenOrdersAt:1000000
         return PersistentState.GetArray<Order>($"OpenOrdersAt:{price}");

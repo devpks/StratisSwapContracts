@@ -138,5 +138,9 @@ public class SwapWallet : SmartContract
     }
     #endregion
     
+    #region Trade Actions
+
+    #endregion
+
     #endregion
 }

@@ -1,14 +1,13 @@
 using System;
 using Xunit;
 
-namespace TradeTests
+namespace CirrusSwap.Tests
 {
-    public class UnitTest1
+    public class OrderBooksTests
     {
         [Fact]
         public void Test1()
         {
-
         }
     }
 }
