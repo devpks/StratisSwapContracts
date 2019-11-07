@@ -32,7 +32,7 @@ public class SwapWallet : SmartContract
     }
 
     public void AcceptOwnership()
-    {
+    { 
         Assert(Message.Sender == NewOwner);
 
         Owner = NewOwner;

@@ -31,6 +31,12 @@ public class Trade : SmartContract
         OwnerAction = action;
         Amount = amount;
         Price = price;
+
+    }
+
+    public override void Receive()
+    {
+
     }
 
     public Address Token {

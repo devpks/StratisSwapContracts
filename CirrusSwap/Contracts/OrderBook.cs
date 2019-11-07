@@ -1,7 +1,7 @@
 using Stratis.SmartContracts;
 
 [Deploy]
-public class OrderBook : SmartContract
+public class OrderBook : SmartContract, IOrderBook
 {
     public OrderBook(ISmartContractState smartContractState) : base (smartContractState)
     {
@@ -54,19 +54,66 @@ public class OrderBook : SmartContract
         // Fullfill existing trade, if one, 
     }
 
+
+    /// <inheritdoc />
+    public void CreateBuyOrder()
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void CreateSellOrder()
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void FulfillSellOrder()
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void FulfillBuyOrder()
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void CloseOrder(Address tradeContract)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public ulong[] GetOpenBuyOrderPrices()
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public ulong[] GetOpenSellOrderPrices()
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void GetOpenOrdersAtPrice(ulong price)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void UpsertOpenSellOrderPrice(ulong price)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void UpsertOpenBuyOrderPrice(ulong price)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void GetPrice()
+    {
+        throw new System.NotImplementedException();
+    }
+
     // Can we share these?
     public struct Order 
     {
         public ulong Price;
-    }
-
-    public struct Buyer
-    {
-
-    }
-
-    public struct Seller
-    {
-
     }
 }
