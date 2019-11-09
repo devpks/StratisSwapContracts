@@ -11,8 +11,8 @@ public interface ITrade
 
     #region Methods
     Buyer GetBuyer(Address buyer);
-    void SetBuyer(Buyer buyer);
+    // void SetBuyer(Buyer buyer);
     Seller GetSeller(Address buyer);
-    void SetSeller(Buyer buyer);
+    // void SetSeller(Buyer buyer);
     #endregion
 }

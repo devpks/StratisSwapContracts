@@ -26,12 +26,11 @@ public class Trade : SmartContract, ITrade
             // do stuff
         }
 
-        Token = token;
-        Owner = Message.Sender;
-        OwnerAction = action;
-        Amount = amount;
-        Price = price;
-
+        this.Token = token;
+        this.Owner = Message.Sender;
+        this.OwnerAction = action;
+        this.Amount = amount;
+        this.Price = price;
     }
 
     public override void Receive()
@@ -182,27 +181,6 @@ public class Trade : SmartContract, ITrade
             AmountRecieved = amountRevieved,
             Balance = balance
         };
-    }
-
-    public struct Buyer {
-        public Address Address;
-        public Address Token;
-        public ulong AmountPurchased;
-        public ulong AmountSpent;
-        public ulong Balance;
-    }
-
-    public struct Seller {
-        public Address Address;
-        public Address Token;
-        public ulong AmountSold;
-        public ulong AmountRecieved;
-        public ulong Balance;
-    }
-
-    public struct Transaction {
-        public Buyer Buyer;
-        public Seller Seller;
     }
     #endregion
 }

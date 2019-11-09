@@ -1,3 +1,4 @@
+using Interfaces;
 using Stratis.SmartContracts;
 
 [Deploy]

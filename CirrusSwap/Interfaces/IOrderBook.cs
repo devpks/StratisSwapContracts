@@ -1,31 +1,34 @@
 using Stratis.SmartContracts;
 
-public interface IOrderBook
+namespace Interfaces
 {
-    #region Properties
-    
-    #endregion
+    public interface IOrderBook
+    {
+        #region Properties
 
-    #region Methods
-    ///<summary>
-    /// Creates a new Buy Order and returns new Trade Contract
-    ///</summary>
-    void CreateBuyOrder();
-    void CreateSellOrder();
+        #endregion
 
-    void FulfillSellOrder();
-    void FulfillBuyOrder();
+        #region Methods
+        ///<summary>
+        /// Creates a new Buy Order and returns new Trade Contract
+        ///</summary>
+        void CreateBuyOrder();
+        void CreateSellOrder();
 
-    void CloseOrder(Address tradeContract);
+        void FulfillSellOrder();
+        void FulfillBuyOrder();
 
-    ulong[] GetOpenBuyOrderPrices();
-    ulong[] GetOpenSellOrderPrices();
+        void CloseOrder(Address tradeContract);
 
-    void GetOpenOrdersAtPrice(ulong price);
+        ulong[] GetOpenBuyOrderPrices();
+        ulong[] GetOpenSellOrderPrices();
 
-    void UpsertOpenSellOrderPrice(ulong price);
-    void UpsertOpenBuyOrderPrice(ulong price);
+        void GetOpenOrdersAtPrice(ulong price);
 
-    void GetPrice();
-    #endregion
+        void UpsertOpenSellOrderPrice(ulong price);
+        void UpsertOpenBuyOrderPrice(ulong price);
+
+        void GetPrice();
+        #endregion
+    }
 }

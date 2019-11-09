@@ -85,14 +85,33 @@ Should it be updated when the orderbook creates the new token contract prior to 
 ## 3. Trade
 Executes trades between buyer(s) and seller(s)
 
+**On Creation**
+
+- Orderbook calls to create this contract when there are no orders to fulfill
+- Sets owner as users wallet address
+- Returns contract address
+
 ---
 
 ## 4. Swap Wallet
 Holds balances of CRS and any SRC token used for all trades.
 
+**Place Order**
+
+- Call order book with price and amount
+- If orders to fulfill
+  - Enter open orders
+    - fulfill all or partial of the order
+      - If all, continue
+      - If partial, end
+    - Remaining amounts, create order on orderbook
+- Else no orders to fulfill
+  - Create new Trade contract
+  - Save open trade address
+
 ---
 
-## Auth Roles and Flow
+## Auth Roles and Flow (Outdated)
 
 - User creates a new swap wallet by creating a new smart contract and supplying the approved bytecode.
 - User sends funds to the new smart contract address (in theory)

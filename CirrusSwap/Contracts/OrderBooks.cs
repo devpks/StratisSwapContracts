@@ -1,7 +1,7 @@
 using Stratis.SmartContracts;
 
 [Deploy]
-public class OrderBooks : SmartContract
+public class OrderBooks : SmartContract, IOrderBooks
 {
     public OrderBooks(ISmartContractState smartContractState) : base (smartContractState)
     {

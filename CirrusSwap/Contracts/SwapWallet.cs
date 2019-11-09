@@ -1,7 +1,7 @@
 using Stratis.SmartContracts;
 
 [Deploy]
-public class SwapWallet : SmartContract
+public class SwapWallet : SmartContract, ISwapWallet
 {
     public SwapWallet(ISmartContractState smartContractState)
         : base(smartContractState)
@@ -142,5 +142,185 @@ public class SwapWallet : SmartContract
 
     #endregion
 
+    private Address GetTokenOrderBook(Address token)
+    {
+        var orderBook = PersistentState.GetAddress($"TokenOrderBook:{token}");
+
+        if (orderBook == Address.Zero)
+        {
+            // Get the orderbook for the token from orderbooks
+            var orderBooksResult = Call(Address.Zero, 0, "GetTokenOrderBook", new object[] { token } );
+
+            Assert(orderBooksResult.Success);
+
+            orderBook = (Address)orderBooksResult.ReturnValue;
+
+            // Save the orderbook address for that token
+            SetTokenOrderBook(token, orderBook);
+        }
+
+        return orderBook;
+    }
+
+    private Order[] GetOpenOrdersToFulfill(Address orderBook, string action, ulong price, ulong amount)
+    {
+        var orderBookResponse = Call(orderBook, amount, action, new object[] { price, amount });
+
+        Assert(orderBookResponse.Success);
+
+        var orders = (Order[])orderBookResponse.ReturnValue;
+
+        return orders;
+    }
+
+    private void SetTokenOrderBook(Address token, Address orderbook)
+    {
+        PersistentState.SetAddress($"TokenOrderBook:{token}", orderbook);
+    }
+
+    private OpenTrade CreateNewTrade(ulong amount, ulong price)
+    {
+        var newTrade = Create<Trade>(amount, new object[] { });
+
+        Assert(newTrade.Success);
+
+        return new OpenTrade
+        {
+            TradeAmount = amount,
+            TradePrice = price,
+            TradeAddress = newTrade.NewContractAddress
+        };
+    }
+
+    private Transaction[] BuildTransactionsList(Transaction[] transactions, Transaction transaction) 
+    {
+        var newLength = transactions.Length + 1;
+        var newTransactions = new Transaction[newLength];
+
+        for (var i = 0; i < transactions.Length; i++)
+        {
+            newTransactions[i] = transactions[i];
+        }
+
+        newTransactions[newLength] = transaction;
+
+        return newTransactions;
+    }
+
+    public TransactionResponse Buy(Address token, ulong price, ulong amount) {
+        // Verify sender is owner
+        Assert(Message.Sender == Owner);
+
+        // Create new TransactionResponse
+        var transactionResponse = new TransactionResponse();
+
+        // Get the order book
+        var orderBook = GetTokenOrderBook(token);
+
+        // Call the orderbook to get available sell offers at the limit price
+        var orders = GetOpenOrdersToFulfill(orderBook, "Buy", price, amount);
+
+        // Fulfill returned orders
+        if (orders.Length > 0)
+        {
+            // loop through and satisfy returned offers
+            foreach(var order in orders)
+            {
+                // Set the amount to trade with
+                var amountToTrade = amount >= order.Amount ? order.Amount : amount;
+
+                // Satisfy all or part of the order
+                var orderResult = Call(order.TradeAddress, amountToTrade, "Buy", new object[] {});
+
+                Assert(orderResult.Success);
+
+                var orderTransaction = (Transaction)orderResult.ReturnValue;
+
+                // deduct from amount
+                amount -= amountToTrade;
+
+                // Add successfull transaction to array
+                transactionResponse.Transactions = BuildTransactionsList(transactionResponse.Transactions, orderTransaction);
+            }
+        }
+
+        // If no orders to begin with or remaining amount after fulfilling other orders
+        if (orders.Length == 0 || amount > 0) 
+        {
+            // remaining amount, create new contract
+            var newTrade = CreateNewTrade(amount, price);
+            transactionResponse.OpenTrade = newTrade;
+        }
+        
+        return transactionResponse;
+    }
+
+    public TransactionResponse Sell(Address token, ulong amount, ulong price) {
+        // Verify sender is owner
+        Assert(Message.Sender == Owner);
+
+        // Create new TransactionResponse
+        var transactionResponse = new TransactionResponse();
+
+        // Get the order book
+        var orderBook = GetTokenOrderBook(token);
+
+        // Call the orderbook to get available sell offers at the limit price
+        var orders = GetOpenOrdersToFulfill(orderBook, "Sell", price, amount);
+
+        // Fulfill returned orders
+        if (orders.Length > 0)
+        {
+            // loop through and satisfy returned offers
+            foreach(var order in orders)
+            {
+                // Set the amount to trade with
+                var amountToTrade = amount >= order.Amount ? order.Amount : amount;
+
+                // Satisfy all or part of the order
+                var orderResult = Call(order.TradeAddress, amountToTrade, "Sell", new object[] {});
+
+                Assert(orderResult.Success);
+
+                var orderTransaction = (Transaction)orderResult.ReturnValue;
+
+                // deduct from amount
+                amount -= amountToTrade;
+
+                // Add successfull transaction to array
+                transactionResponse.Transactions = BuildTransactionsList(transactionResponse.Transactions, orderTransaction);
+            }
+        }
+
+        // If no orders to begin with or remaining amount after fulfilling other orders
+        if (orders.Length == 0 || amount > 0) 
+        {
+            // remaining amount, create new contract
+            var newTrade = CreateNewTrade(amount, price);
+            transactionResponse.OpenTrade = newTrade;
+        }
+        
+        return transactionResponse;
+    }
     #endregion
+
+    public struct Order
+    {
+        public Address TradeAddress;
+        public ulong Price;
+        public ulong Amount;
+    }
+
+    public struct TransactionResponse
+    {
+        public Transaction[] Transactions;
+        public OpenTrade OpenTrade;
+    }
+
+    public struct OpenTrade
+    {
+        public Address TradeAddress;
+        public ulong TradeAmount;
+        public ulong TradePrice;
+    }
 }
