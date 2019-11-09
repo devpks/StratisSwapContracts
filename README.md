@@ -149,6 +149,22 @@ Token / Satoshi
 - 10 = 1_000_000_000
 - 100 = 10_000_000_000
 - 1_000 = 100_000_000_000
-- 10_000 = 100_000_000_000_000
-- 1_000_00 = 100_000_000_000_000_000
-- 1_000_000 = 100_000_000_000_000_000_000
+- 10_000 = 1_000_000_000_000
+- 1_000_00 = 10_000_000_000_000
+- 1_000_000 = 100_000_000_000_000
+- 10_000_000 = 1_000_000_000_000_000
+- 100_000_000 = 10_000_000_000_000_000
+- 1_000_000_000 = 100_000_000_000_000_000
+- 10_000_000_000 = 1_000_000_000_000_000_000
+
+## Concerns
+
+- Asserts failing midway through process of different contracts
+  - Need failsafe calls and tests
+  - Need to verify things are atomic
+- Working with satoshi values for prices
+- Working with satoshi values for amounts
+- Gas prices from orderbook loops
+- Security, calling methods out of order
+  - Example: Creating a new Token contract directly, not from the wallet
+  - Example: Attempting to satisfy a token contract, not from wallet

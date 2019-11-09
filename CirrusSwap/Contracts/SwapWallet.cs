@@ -1,7 +1,7 @@
 using Stratis.SmartContracts;
 
 [Deploy]
-public class SwapWallet : SmartContract, ISwapWallet
+public class SwapWallet : SmartContract
 {
     public SwapWallet(ISmartContractState smartContractState)
         : base(smartContractState)
@@ -55,7 +55,16 @@ public class SwapWallet : SmartContract, ISwapWallet
 
         Assert(Balance >= amount);
 
-        return Transfer(Message.Sender, amount);
+        return Transfer(Owner, amount);
+    }
+
+    public ITransferResult TransferCrs(Address sendTo, ulong amount)
+    {
+        Assert(Message.Sender == Owner);
+
+        Assert(Balance >= amount);
+
+        return Transfer(sendTo, amount);
     }
     #endregion
     
@@ -139,9 +148,116 @@ public class SwapWallet : SmartContract, ISwapWallet
     #endregion
     
     #region Trade Actions
+    public TransactionResponse Buy(Address token, ulong price, ulong amount) {
+        // Verify sender is owner
+        Assert(Message.Sender == Owner);
 
-    #endregion
+        // Create new TransactionResponse
+        var transactionResponse = new TransactionResponse();
 
+        // Get the order book
+        var orderBook = GetTokenOrderBook(token);
+
+        // Call the orderbook to get available sell offers at the limit price
+        var orders = GetOpenOrdersToFulfill(orderBook, "FindAvailableSellOrdersToFulfill", price, amount);
+
+        // Fulfill returned orders
+        if (orders.Length > 0)
+        {
+            // loop through and satisfy returned offers
+            foreach(var order in orders)
+            {
+                // Set the amount to trade with
+                var amountToTrade = amount >= order.Amount ? order.Amount : amount;
+
+                // Satisfy all or part of the order
+                // This contract would be responsible for 
+                // - Satisfying/Transferring funds
+                // - Updating orderbook as still open or closed
+                // - Updating orderbook max/min buy/sell prices
+                var orderResult = Call(order.TradeAddress, amountToTrade, "Buy", new object[] {});
+
+                Assert(orderResult.Success);
+
+                var orderTransaction = (Transaction)orderResult.ReturnValue;
+
+                // deduct from amount
+                amount -= amountToTrade;
+
+                // Add successfull transaction to array
+                transactionResponse.Transactions = BuildTransactionsList(transactionResponse.Transactions, orderTransaction);
+            }
+        }
+
+        // If no orders to begin with or remaining amount after fulfilling other orders
+        if (orders.Length == 0 || amount > 0) 
+        {
+            // remaining amount, create new contract
+            var newTrade = CreateNewTrade(amount, price);
+            transactionResponse.OpenTrade = newTrade;
+        }
+        
+        // This is the list of transactions and the response back to the client. 
+        // Prior to returning to client do we want to record anything?
+        // Balances, Trade history, etc.
+        return transactionResponse;
+    }
+
+    public TransactionResponse Sell(Address token, ulong amount, ulong price) {
+        // Verify sender is owner
+        Assert(Message.Sender == Owner);
+
+        // Create new TransactionResponse
+        var transactionResponse = new TransactionResponse();
+
+        // Get the order book
+        var orderBook = GetTokenOrderBook(token);
+
+        // Call the orderbook to get available sell offers at the limit price
+        var orders = GetOpenOrdersToFulfill(orderBook, "FindAvailableBuyOrdersToFulfill", price, amount);
+
+        // Fulfill returned orders
+        if (orders.Length > 0)
+        {
+            // loop through and satisfy returned offers
+            foreach(var order in orders)
+            {
+                // Set the amount to trade with
+                var amountToTrade = amount >= order.Amount ? order.Amount : amount;
+
+                // Satisfy all or part of the order
+                // This contract would be responsible for 
+                // - Satisfying/Transferring funds
+                // - Updating orderbook as still open or closed
+                // - Updating orderbook max/min buy/sell prices
+                var orderResult = Call(order.TradeAddress, amountToTrade, "Sell", new object[] {});
+
+                Assert(orderResult.Success);
+
+                var orderTransaction = (Transaction)orderResult.ReturnValue;
+
+                // deduct from amount
+                amount -= amountToTrade;
+
+                // Add successfull transaction to array
+                transactionResponse.Transactions = BuildTransactionsList(transactionResponse.Transactions, orderTransaction);
+            }
+        }
+
+        // If no orders to begin with or remaining amount after fulfilling other orders
+        if (orders.Length == 0 || amount > 0) 
+        {
+            // remaining amount, create new contract
+            var newTrade = CreateNewTrade(amount, price);
+            transactionResponse.OpenTrade = newTrade;
+        }
+        
+        // This is the list of transactions and the response back to the client. 
+        // Prior to returning to client do we want to record anything?
+        // Balances, Trade history, etc.
+        return transactionResponse;
+    }
+    
     private Address GetTokenOrderBook(Address token)
     {
         var orderBook = PersistentState.GetAddress($"TokenOrderBook:{token}");
@@ -156,7 +272,7 @@ public class SwapWallet : SmartContract, ISwapWallet
             orderBook = (Address)orderBooksResult.ReturnValue;
 
             // Save the orderbook address for that token
-            SetTokenOrderBook(token, orderBook);
+            PersistentState.SetAddress($"TokenOrderBook:{token}", orderBook);
         }
 
         return orderBook;
@@ -164,18 +280,11 @@ public class SwapWallet : SmartContract, ISwapWallet
 
     private Order[] GetOpenOrdersToFulfill(Address orderBook, string action, ulong price, ulong amount)
     {
-        var orderBookResponse = Call(orderBook, amount, action, new object[] { price, amount });
+        var orderBookResponse = Call(orderBook, 0, action, new object[] { price, amount });
 
         Assert(orderBookResponse.Success);
 
-        var orders = (Order[])orderBookResponse.ReturnValue;
-
-        return orders;
-    }
-
-    private void SetTokenOrderBook(Address token, Address orderbook)
-    {
-        PersistentState.SetAddress($"TokenOrderBook:{token}", orderbook);
+        return (Order[])orderBookResponse.ReturnValue;
     }
 
     private OpenTrade CreateNewTrade(ulong amount, ulong price)
@@ -206,104 +315,11 @@ public class SwapWallet : SmartContract, ISwapWallet
 
         return newTransactions;
     }
-
-    public TransactionResponse Buy(Address token, ulong price, ulong amount) {
-        // Verify sender is owner
-        Assert(Message.Sender == Owner);
-
-        // Create new TransactionResponse
-        var transactionResponse = new TransactionResponse();
-
-        // Get the order book
-        var orderBook = GetTokenOrderBook(token);
-
-        // Call the orderbook to get available sell offers at the limit price
-        var orders = GetOpenOrdersToFulfill(orderBook, "FindAvailableSellOrdersToFulfill", price, amount);
-
-        // Fulfill returned orders
-        if (orders.Length > 0)
-        {
-            // loop through and satisfy returned offers
-            foreach(var order in orders)
-            {
-                // Set the amount to trade with
-                var amountToTrade = amount >= order.Amount ? order.Amount : amount;
-
-                // Satisfy all or part of the order
-                var orderResult = Call(order.TradeAddress, amountToTrade, "Buy", new object[] {});
-
-                Assert(orderResult.Success);
-
-                var orderTransaction = (Transaction)orderResult.ReturnValue;
-
-                // deduct from amount
-                amount -= amountToTrade;
-
-                // Add successfull transaction to array
-                transactionResponse.Transactions = BuildTransactionsList(transactionResponse.Transactions, orderTransaction);
-            }
-        }
-
-        // If no orders to begin with or remaining amount after fulfilling other orders
-        if (orders.Length == 0 || amount > 0) 
-        {
-            // remaining amount, create new contract
-            var newTrade = CreateNewTrade(amount, price);
-            transactionResponse.OpenTrade = newTrade;
-        }
-        
-        return transactionResponse;
-    }
-
-    public TransactionResponse Sell(Address token, ulong amount, ulong price) {
-        // Verify sender is owner
-        Assert(Message.Sender == Owner);
-
-        // Create new TransactionResponse
-        var transactionResponse = new TransactionResponse();
-
-        // Get the order book
-        var orderBook = GetTokenOrderBook(token);
-
-        // Call the orderbook to get available sell offers at the limit price
-        var orders = GetOpenOrdersToFulfill(orderBook, "FindAvailableBuyOrdersToFulfill", price, amount);
-
-        // Fulfill returned orders
-        if (orders.Length > 0)
-        {
-            // loop through and satisfy returned offers
-            foreach(var order in orders)
-            {
-                // Set the amount to trade with
-                var amountToTrade = amount >= order.Amount ? order.Amount : amount;
-
-                // Satisfy all or part of the order
-                var orderResult = Call(order.TradeAddress, amountToTrade, "Sell", new object[] {});
-
-                Assert(orderResult.Success);
-
-                var orderTransaction = (Transaction)orderResult.ReturnValue;
-
-                // deduct from amount
-                amount -= amountToTrade;
-
-                // Add successfull transaction to array
-                transactionResponse.Transactions = BuildTransactionsList(transactionResponse.Transactions, orderTransaction);
-            }
-        }
-
-        // If no orders to begin with or remaining amount after fulfilling other orders
-        if (orders.Length == 0 || amount > 0) 
-        {
-            // remaining amount, create new contract
-            var newTrade = CreateNewTrade(amount, price);
-            transactionResponse.OpenTrade = newTrade;
-        }
-        
-        return transactionResponse;
-    }
     #endregion
 
+    #endregion
+
+    #region Structs
     public struct Order
     {
         public Address TradeAddress;
@@ -324,4 +340,5 @@ public class SwapWallet : SmartContract, ISwapWallet
         public ulong TradeAmount;
         public ulong TradePrice;
     }
+    #endregion
 }
