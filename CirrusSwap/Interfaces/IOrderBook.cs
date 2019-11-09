@@ -2,6 +2,11 @@ using Stratis.SmartContracts;
 
 public interface IOrderBook
 {
+    #region Properties
+    
+    #endregion
+
+    #region Methods
     ///<summary>
     /// Creates a new Buy Order and returns new Trade Contract
     ///</summary>
@@ -22,4 +27,5 @@ public interface IOrderBook
     void UpsertOpenBuyOrderPrice(ulong price);
 
     void GetPrice();
+    #endregion
 }

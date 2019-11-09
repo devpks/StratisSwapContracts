@@ -1,7 +1,7 @@
 using Stratis.SmartContracts;
 
 [Deploy]
-public class Trade : SmartContract
+public class Trade : SmartContract, ITrade
 {
     private const string buy = "buy";
     private const string sell = "sell";
