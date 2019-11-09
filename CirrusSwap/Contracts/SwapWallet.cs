@@ -218,7 +218,7 @@ public class SwapWallet : SmartContract, ISwapWallet
         var orderBook = GetTokenOrderBook(token);
 
         // Call the orderbook to get available sell offers at the limit price
-        var orders = GetOpenOrdersToFulfill(orderBook, "Buy", price, amount);
+        var orders = GetOpenOrdersToFulfill(orderBook, "FindAvailableSellOrdersToFulfill", price, amount);
 
         // Fulfill returned orders
         if (orders.Length > 0)
@@ -266,7 +266,7 @@ public class SwapWallet : SmartContract, ISwapWallet
         var orderBook = GetTokenOrderBook(token);
 
         // Call the orderbook to get available sell offers at the limit price
-        var orders = GetOpenOrdersToFulfill(orderBook, "Sell", price, amount);
+        var orders = GetOpenOrdersToFulfill(orderBook, "FindAvailableBuyOrdersToFulfill", price, amount);
 
         // Fulfill returned orders
         if (orders.Length > 0)
@@ -309,6 +309,7 @@ public class SwapWallet : SmartContract, ISwapWallet
         public Address TradeAddress;
         public ulong Price;
         public ulong Amount;
+        public bool IsOpen;
     }
 
     public struct TransactionResponse

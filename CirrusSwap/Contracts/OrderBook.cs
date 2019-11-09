@@ -1,15 +1,15 @@
-using Interfaces;
 using Stratis.SmartContracts;
 
 [Deploy]
-public class OrderBook : SmartContract, IOrderBook
+public class OrderBook : SmartContract
 {
     public OrderBook(ISmartContractState smartContractState) : base (smartContractState)
     {
-        // Check open order prices [ 100, 101, 105, 110 ]
-        // Check last sale price
-        // Get closes relative price depending on action buy or sell
-        // Get orders at that price
+        // Open questions
+        // Do we want to track pricing?
+        // Do we want to track totals at order prices?
+        // Do we want to track numOpenTrades on each side buy/sell?
+        // Do we want to record closed orders?
     }
 
     public Address Token {
@@ -22,99 +22,151 @@ public class OrderBook : SmartContract, IOrderBook
         private set => PersistentState.SetUInt64(nameof(CurrentPrice), value);
     }
 
-    public Order[] GetOrdersAtPrice(ulong price) {
-        // OpenOrdersAt:1000000
-        return PersistentState.GetArray<Order>($"OpenOrdersAt:{price}");
+    private ulong MinimumBuyPrice {
+        get => PersistentState.GetUInt64(nameof(MinimumBuyPrice));
+        set => PersistentState.SetUInt64(nameof(MinimumBuyPrice), value);
     }
 
-    public ulong[] GetOpenOrderPrices()
-    {
-        return PersistentState.GetArray<ulong>("OpenOrderPrices");
+    private ulong MaximumBuyPrice {
+        get => PersistentState.GetUInt64(nameof(MaximumBuyPrice));
+        set => PersistentState.SetUInt64(nameof(MaximumBuyPrice), value);
     }
 
-    public void SetOpenOrderPrices(ulong price)
-    {
-        // Read, arrange, adjust open order prices
+    private ulong MinimumSellPrice {
+        get => PersistentState.GetUInt64(nameof(MinimumSellPrice));
+        set => PersistentState.SetUInt64(nameof(MinimumSellPrice), value);
     }
 
-    private void SetOrderAtPrice(Order order)
-    {
-        // save order to end of array
+    private ulong MaximumSellPrice {
+        get => PersistentState.GetUInt64(nameof(MaximumSellPrice));
+        set => PersistentState.SetUInt64(nameof(MaximumSellPrice), value);
     }
 
-    public void PreparePlaceOrder()
-    {
-        // User wants to buy or sell
-        // Check order book for qualifying Trades
-        // If some, return address
-        // If none, return message to create new order
+    public Order[] GetBuyOrdersAtPrice(ulong price) {
+        return PersistentState.GetArray<Order>($"OpenBuyOrdersAt:{price}"); // OpenBuyOrdersAt:1000000
     }
 
-    public void PlaceOrder()
-    {
-        // Fullfill existing trade, if one, 
+    public Order[] GetSellOrdersAtPrice(ulong price) {
+        return PersistentState.GetArray<Order>($"OpenSellOrdersAt:{price}"); // OpenSellOrdersAt:1000000
     }
 
-
-    /// <inheritdoc />
-    public void CreateBuyOrder()
+    private Order[] ArrangeOrdersResponse(Order[] orders, Order order)
     {
-        throw new System.NotImplementedException();
+        var newLength = orders.Length + 1;
+        var ordersList = new Order[newLength];
+
+        for (var i = 0; i < orders.Length; i++)
+        {
+            ordersList[i] = orders[i];
+        }
+
+        ordersList[newLength] = order;
+
+        return ordersList;
     }
 
-    public void CreateSellOrder()
+    ///<summary>
+    /// Used when a user wants to buy, check the sell orders first. Return any
+    /// sell orders found that are less than the specified price.
+    /// John wants to buy at 1adt per at a maximum price of 1crs per, check 
+    /// and return sell orders that are set at prices up 1crs per adt.
+    ///</summary>
+    ///<returns>Returns array of orders for wallet to fulfill</returns>
+    public Order[] FindAvailableSellOrdersToFulfill(ulong maxPrice, ulong maxAmount)
     {
-        throw new System.NotImplementedException();
+        var ordersResponse = new Order[0];
+        // If there are orders to fulfill at the desired prices
+        if (MinimumSellPrice <= maxPrice)
+        {
+            ulong totalAmountAtPrice = 0;
+            
+            for (var i = MinimumSellPrice; i <= maxPrice; i++)
+            {
+                // Get sell orders for the given price
+                var sellOrders = GetSellOrdersAtPrice(i);
+                
+                // if none, on to the next price
+                if (sellOrders.Length == 0) 
+                {
+                    continue;
+                }
+
+                foreach (var order in sellOrders)
+                {
+                    totalAmountAtPrice += order.Amount;
+
+                    // Gather all orders here
+                    ordersResponse = ArrangeOrdersResponse(ordersResponse, order);
+
+                    if (totalAmountAtPrice > maxAmount) 
+                    {
+                        break;
+                    }
+                } 
+
+                if (totalAmountAtPrice > maxAmount) 
+                {
+                    break;
+                }               
+            }
+        }
+
+        return ordersResponse;
     }
 
-    public void FulfillSellOrder()
+    ///<summary>
+    /// Used when a user wants to sell, check the buy orders first. Return any
+    /// buy orders found that are at least the specified price.
+    /// John wants to sell at 1crs per 1alt, check and return buy orders
+    /// that are set up to 1crs per 1alt.
+    ///</summary>
+    public Order[] FindAvailableBuyOrdersToFulfill(ulong minPrice, ulong maxAmount)
     {
-        throw new System.NotImplementedException();
+        var ordersResponse = new Order[0];
+        // If there are orders to fulfill at the desired prices
+        if (MaximumBuyPrice >= minPrice)
+        {
+            ulong totalAmountAtPrice = 0;
+            
+            for (var i = minPrice; i <= MaximumBuyPrice; i++)
+            {
+                // Get sell orders for the given price
+                var buyOrders = GetBuyOrdersAtPrice(i);
+                
+                // if none, on to the next price
+                if (buyOrders.Length == 0) 
+                {
+                    continue;
+                }
+
+                foreach (var order in buyOrders)
+                {
+                    totalAmountAtPrice += order.Amount;
+
+                    // Gather all orders here
+                    ordersResponse = ArrangeOrdersResponse(ordersResponse, order);
+
+                    if (totalAmountAtPrice > maxAmount) 
+                    {
+                        break;
+                    }
+                } 
+
+                if (totalAmountAtPrice > maxAmount) 
+                {
+                    break;
+                }               
+            }
+        }
+
+        return ordersResponse;
     }
 
-    public void FulfillBuyOrder()
+    public struct Order
     {
-        throw new System.NotImplementedException();
-    }
-
-    public void CloseOrder(Address tradeContract)
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public ulong[] GetOpenBuyOrderPrices()
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public ulong[] GetOpenSellOrderPrices()
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public void GetOpenOrdersAtPrice(ulong price)
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public void UpsertOpenSellOrderPrice(ulong price)
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public void UpsertOpenBuyOrderPrice(ulong price)
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public void GetPrice()
-    {
-        throw new System.NotImplementedException();
-    }
-
-    // Can we share these?
-    public struct Order 
-    {
+        public Address TradeAddress;
         public ulong Price;
+        public ulong Amount;
+        public bool IsOpen;
     }
 }
