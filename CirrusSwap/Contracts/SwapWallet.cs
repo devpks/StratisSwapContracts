@@ -175,6 +175,7 @@ public class SwapWallet : SmartContract
                 // - Satisfying/Transferring funds
                 // - Updating orderbook as still open or closed
                 // - Updating orderbook max/min buy/sell prices
+                // - Updating orderbook trade amount
                 var orderResult = Call(order.TradeAddress, amountToTrade, "Buy", new object[] {});
 
                 Assert(orderResult.Success);
@@ -230,6 +231,7 @@ public class SwapWallet : SmartContract
                 // - Satisfying/Transferring funds
                 // - Updating orderbook as still open or closed
                 // - Updating orderbook max/min buy/sell prices
+                // - Updating orderbook trade amount
                 var orderResult = Call(order.TradeAddress, amountToTrade, "Sell", new object[] {});
 
                 Assert(orderResult.Success);

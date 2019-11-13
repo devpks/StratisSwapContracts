@@ -22,11 +22,6 @@ public class OrderBook : SmartContract
         private set => PersistentState.SetUInt64(nameof(CurrentPrice), value);
     }
 
-    private ulong MinimumBuyPrice {
-        get => PersistentState.GetUInt64(nameof(MinimumBuyPrice));
-        set => PersistentState.SetUInt64(nameof(MinimumBuyPrice), value);
-    }
-
     private ulong MaximumBuyPrice {
         get => PersistentState.GetUInt64(nameof(MaximumBuyPrice));
         set => PersistentState.SetUInt64(nameof(MaximumBuyPrice), value);
@@ -35,11 +30,6 @@ public class OrderBook : SmartContract
     private ulong MinimumSellPrice {
         get => PersistentState.GetUInt64(nameof(MinimumSellPrice));
         set => PersistentState.SetUInt64(nameof(MinimumSellPrice), value);
-    }
-
-    private ulong MaximumSellPrice {
-        get => PersistentState.GetUInt64(nameof(MaximumSellPrice));
-        set => PersistentState.SetUInt64(nameof(MaximumSellPrice), value);
     }
 
     public Order[] GetBuyOrdersAtPrice(ulong price) {
@@ -100,14 +90,9 @@ public class OrderBook : SmartContract
 
                     if (totalAmountAtPrice > maxAmount) 
                     {
-                        break;
+                        return ordersResponse;
                     }
-                } 
-
-                if (totalAmountAtPrice > maxAmount) 
-                {
-                    break;
-                }               
+                }            
             }
         }
 
@@ -148,14 +133,9 @@ public class OrderBook : SmartContract
 
                     if (totalAmountAtPrice > maxAmount) 
                     {
-                        break;
+                        return ordersResponse;
                     }
-                } 
-
-                if (totalAmountAtPrice > maxAmount) 
-                {
-                    break;
-                }               
+                }            
             }
         }
 
