@@ -12,30 +12,76 @@ public class Trade : SmartContract
         ulong amount, 
         ulong price) : base (smartContractState)
     {
-        var action = tradeAction.ToLower();
+        var action = tradeAction.ToLowerInvariant();
         Assert(action == buy || action == sell, "Action must me buy or sell");
         Assert(amount > 0, "Amount must be greater than 0");
         Assert(price > 0, "Price must be greater than 0");
-
-        if (action == buy) {
-            // Verify the value sent covers the amount to buy and purchase price
-            Assert(Message.Value > amount * price);
-        }
-        else if (action == sell)
-        {
-            // do stuff
-        }
 
         this.Token = token;
         this.Owner = Message.Sender;
         this.OwnerAction = action;
         this.Amount = amount;
         this.Price = price;
+        this.TotalPrice = amount * price;
+
+        if (action == buy) 
+        {
+            Assert(VerifyBuyAction());
+        }
+        else if (action == sell)
+        {
+            Assert(VerifySellAction());
+        }
+
+        this.IsActive = true;
     }
 
-    public override void Receive()
+    private bool VerifyBuyAction()
     {
+        // Verify the value sent covers the amount to buy and purchase price
+        Assert(Message.Value > this.TotalPrice);
 
+        return true;
+    }
+
+    private bool VerifySellAction()
+    {
+        // Verify the balance of this contracts address
+        var result = Call(this.Token, 0, "Allowance", new object[] { });
+
+        Assert(result.Success);
+
+        Assert((ulong)result.ReturnValue >= this.TotalPrice);
+
+        return true;
+    }
+
+    public void Destroy()
+    {
+        Assert(Message.Sender == Owner);
+
+        if (this.OwnerAction == buy)
+        {
+            // Need to keep an updated balance through txs
+            this.Transfer(this.Owner, this.Amount * this.Price);
+        }
+        else if (this.OwnerAction == sell)
+        {
+            // Need to keep an updated balance through txs
+            var result = Call(this.Token, 0, "TransferTo", new object[] { this.Owner, this.Amount * this.Price });
+
+            Assert(result.Success);
+        }
+
+        this.IsActive = false;
+    }
+
+    public ulong TotalPrice => this.Price * this.Amount;
+
+    private bool IsActive 
+    {
+        get => PersistentState.GetBool(nameof(IsActive));
+        set => PersistentState.SetBool(nameof(IsActive), value);
     }
 
     public Address Token {
