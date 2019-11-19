@@ -39,7 +39,7 @@ namespace CirrusSwap.Tests
 
         private Trade NewTrade(Address sender, ulong value, string contractType, Address token, ulong amount, ulong price)
         {
-            MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, sender, 0));
+            MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, sender, value));
             MockPersistentState.Setup(x => x.GetAddress(nameof(Owner))).Returns(Owner);
             MockPersistentState.Setup(x => x.GetString(nameof(ContractType))).Returns(contractType);
             MockPersistentState.Setup(x => x.GetAddress(nameof(Token))).Returns(token);
@@ -52,7 +52,7 @@ namespace CirrusSwap.Tests
 
         [Theory]
         [InlineData(0, 10_000_000, 5_000_000_000, "sell")]
-        [InlineData(5, 10_000_000, 5_000_000_000, "buy")]
+        [InlineData(500_000_000, 10_000_000, 5_000_000_000, "buy")]
         public void Creates_New_Trade(ulong value, ulong price, ulong amount, string type)
         {
             var trade = NewTrade(Owner, value, type, Token, amount, price);

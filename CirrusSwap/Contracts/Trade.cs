@@ -5,6 +5,7 @@ public class Trade : SmartContract
 {
     private const string buy = "buy";
     private const string sell = "sell";
+    private const ulong oneFullToken = 100_000_000;
     public Trade(
         ISmartContractState smartContractState, 
         string contractType, 
@@ -14,7 +15,7 @@ public class Trade : SmartContract
     {
         contractType = contractType.ToLowerInvariant();
         Assert(contractType == buy || contractType == sell, "Action must me buy or sell");
-        Assert(amount > 100000000, "Amount must be greater than 0");
+        Assert(amount > 0, "Amount must be greater than 0");
         Assert(price > 0, "Price must be greater than 0");
 
         this.Token = token;
@@ -25,13 +26,13 @@ public class Trade : SmartContract
 
         if (contractType == buy) 
         {
-            Assert(Message.Value > this.TradeBalance);
+            Assert(Message.Value >= this.TradeBalance);
         }
 
         this.IsActive = true;
     }
 
-    public ulong TradeBalance => this.Amount / this.Price;
+    public ulong TradeBalance => this.Amount / (oneFullToken / this.Price);
 
     public bool IsActive 
     {
