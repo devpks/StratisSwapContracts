@@ -5,34 +5,35 @@ public class Trade : SmartContract
 {
     private const string buy = "buy";
     private const string sell = "sell";
-    private const ulong oneFullToken = 100_000_000;
     public Trade(
         ISmartContractState smartContractState, 
-        string contractType, 
         Address token, 
         ulong amount, 
-        ulong price) : base (smartContractState)
+        ulong sellPrice) : base (smartContractState)
     {
-        contractType = contractType.ToLowerInvariant();
-        Assert(contractType == buy || contractType == sell, "Action must me buy or sell");
-        Assert(amount > 0, "Amount must be greater than 0");
-        Assert(price > 0, "Price must be greater than 0");
+        var isBuyContract = Message.Value > 0 && sellPrice == 0;
+        var isSellContract = Message.Value == 0 && sellPrice > 0;
 
-        this.Token = token;
-        this.Owner = Message.Sender;
-        this.ContractType = contractType;
-        this.Amount = amount; // amount of src always in full e.g. (50adt)
-        this.Price = price; // price per src in stratoshies e.g. 10_000_000 (.1crs)
+        Assert(amount > 0, "Price must be greater than 0");
+        Assert(isBuyContract || isSellContract);
 
-        if (contractType == buy) 
+        Token = token;
+        Owner = Message.Sender;
+        Amount = amount;
+
+        if (isBuyContract)
         {
-            Assert(Message.Value >= this.TradeBalance);
+            ContractType = buy;
+            Price = Message.Value;
+        }
+        else if (isSellContract)
+        {
+            ContractType = sell;
+            Price = sellPrice;
         }
 
-        this.IsActive = true;
+        IsActive = true;
     }
-
-    public ulong TradeBalance => this.Amount / (oneFullToken / this.Price);
 
     public bool IsActive 
     {
@@ -67,87 +68,83 @@ public class Trade : SmartContract
 
     public void Destroy()
     {
+        Assert(IsActive);
         Assert(Message.Sender == Owner);
 
-        if (this.ContractType == buy)
+        // Any left over balance belongs to owner 
+        if (ContractType == buy)
         {
-            // Need to keep an updated balance through txs
-            this.Transfer(this.Owner, this.Amount * this.Price);
+            Transfer(Owner, Balance);
         }
-        else if (this.ContractType == sell)
+        else if (ContractType == sell)
         {
-            // Need to keep an updated balance through txs
-            var result = Call(this.Token, 0, "TransferTo", new object[] { this.Owner, this.Amount * this.Price });
-
-            Assert(result.Success);
+            // hmmm message.value or balance here?
+            Transfer(Message.Sender, Message.Value);
         }
 
-        this.IsActive = false;
+        IsActive = false;
     }
 
-    public Transaction Buy(ulong amount) // amount of src to buy in full e.g. (50 adt)
+    public Transaction Buy() // amount of src to buy in full e.g. (50 adt)
     {
         // Verify
-        Assert(Message.Sender != Owner);
         Assert(ContractType == sell, "Invalid operation, buy offers only.");
-        Assert(amount <= Amount, "Cannot purchase more than what is beings sold.");
+        Assert(Message.Value >= Price, "Not enough funds to cover purchase.");
 
-        var totalCost = amount * Price;
-        Assert(Message.Value >= totalCost, "Not enough funds to cover purchase.");
+        // Execute the transaction
+        return ExecuteTransaction(Message.Sender, Owner);
+    }
 
-        // Convert amount from full amount to stratoshies
-        // e.g. from 50 to 5_000_000_000
-        ulong stratoshiAmount = 50 * 10000000;
+    public Transaction Sell()
+    {
+        // Verify
+        Assert(ContractType == buy, "Invalid operation, sell offers only.");
 
-        // Transfer SRC
-        // Contract address must have necessary allowance
-        var transferResult = Call(Token, 0, "TransferFrom", new object[] { Owner, Message.Sender, stratoshiAmount });
-        
+        // Execute the transaction
+        return ExecuteTransaction(Owner, Message.Sender);
+    }
+
+    private Transaction ExecuteTransaction(Address buyer, Address seller)
+    {
+        // Verify
+        Assert(IsActive);
+        Assert(Message.Sender != Owner);
+
+        // Transfer SRC-Contract address must have necessary allowance
+        var transferResult = Call(Token, 0, "TransferFrom", new object[] { seller, buyer, Amount });
+
         // Verify Successful Transfer
         if (!transferResult.Success)
         {
-            this.Destroy();
+            Destroy();
         }
 
         // Transfer CRS totalCost to seller
-        Transfer(Owner, totalCost);
+        Transfer(seller, Price);
+
         // Any remainder transfer back to buyer
-        // Balance record of who deposited x amount needs to be made for withdraw abilities
         if (Balance > 0)
         {
-            Transfer(Message.Sender, Balance);
+            // is this correct? message.value 
+            Transfer(buyer, Balance);
         }
 
-        this.Amount -= amount;
+        var txResult = new Transaction
+        {
+            Buyer = buyer,
+            Seller = seller,
+            SrcAmount = Amount,
+            CrsAmount = Price
+        };
 
-        // if (this.Amount == 0)
-        // {
-        //     this.Destroy();
-        // }
-
-        // Log Transaction Result
-        var txResult = new Transaction { Buyer = Message.Sender, Seller = Owner, SrcAmount = stratoshiAmount, CrsAmount = totalCost };
         Log(txResult);
-        
+
+        // Destroy contract
+        IsActive = false;
+
         return txResult;
     }
 
-    // public Transaction Sell(ulong amount)
-    // {
-    //     Assert(Message.Sender != Owner);
-    //     Assert(ContractType != "sell", "Invalid operation, buy offers only.");
-
-    //     var txResult = new Transaction { Buyer = Message.Sender, Seller = Owner, SrcAmount = stratoshiAmount, CrsAmount = totalCost };
-    //     Log(txResult);
-
-    //     return txResult;
-    // }
-
-    private ulong ToFull(ulong a)
-    {
-        // a / 100000000 = 50
-        return a / 100000000;
-    }
 
     public struct Transaction
     {
