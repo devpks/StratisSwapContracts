@@ -18,4 +18,9 @@
     <ProjectReference Include="..\CirrusSwap\CirrusSwap.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="SwapWalletTests.cs" />
+    <Compile Remove="OrderBooksTests.cs" />
+    <Compile Remove="OrderBookTests.cs" />
+  </ItemGroup>
 </Project>

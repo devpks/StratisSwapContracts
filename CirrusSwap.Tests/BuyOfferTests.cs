@@ -5,7 +5,7 @@ using Xunit;
 
 namespace CirrusSwap.Tests
 {
-    public class TradeTests
+    public class BuyOfferTests
     {
         private readonly Mock<ISmartContractState> MockContractState;
         private readonly Mock<IPersistentState> MockPersistentState;
@@ -21,7 +21,7 @@ namespace CirrusSwap.Tests
         private readonly bool IsActive;
         private readonly string ContractType;
 
-        public TradeTests()
+        public BuyOfferTests()
         {
             MockContractLogger = new Mock<IContractLogger>();
             MockPersistentState = new Mock<IPersistentState>();
@@ -37,7 +37,7 @@ namespace CirrusSwap.Tests
             ContractAddress = "0x0000000000000000000000000000000000000005".HexToAddress();
         }
 
-        private Trade NewTrade(Address sender, ulong value, string contractType, Address token, ulong amount, ulong price)
+        private BuyOffer NewBuyOffer(Address sender, ulong value, string contractType, Address token, ulong amount, ulong price)
         {
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, sender, value));
             MockPersistentState.Setup(x => x.GetAddress(nameof(Owner))).Returns(Owner);
@@ -47,7 +47,7 @@ namespace CirrusSwap.Tests
             MockPersistentState.Setup(x => x.GetUInt64(nameof(Price))).Returns(price);
             MockPersistentState.Setup(x => x.GetBool(nameof(IsActive))).Returns(true);
 
-            return new Trade(MockContractState.Object, token, amount, price);
+            return new BuyOffer(MockContractState.Object, token, amount, price);
         }
 
         [Theory]
@@ -55,7 +55,7 @@ namespace CirrusSwap.Tests
         [InlineData(500_000_000, 10_000_000, 5_000_000_000, "buy")]
         public void Creates_New_Trade(ulong value, ulong price, ulong amount, string type)
         {
-            var trade = NewTrade(Owner, value, type, Token, amount, price);
+            var trade = NewBuyOffer(Owner, value, type, Token, amount, price);
 
             MockPersistentState.Verify(x => x.SetAddress(nameof(Owner), Owner));
             Assert.Equal(Owner, trade.Owner);
@@ -82,7 +82,6 @@ namespace CirrusSwap.Tests
         // [InlineData(5_000_000_000, 10_000_000, 500_000_000)]
         public void Calculates_Cost_Correctly(ulong amount, ulong price, ulong expectedCost)
         {
-            50_000_000_000
             const ulong oneFullToken = 100_000_000;
             double test = (double)oneFullToken / (double)price;
             double remaidner = oneFullToken % price;
