@@ -5,89 +5,137 @@ public class BuyOffer : SmartContract
 {
     public BuyOffer(
         ISmartContractState smartContractState, 
-        Address token, 
-        ulong amount) : base (smartContractState)
+        Address tokenAddress, 
+        ulong tokenAmount,
+        ulong tokenPrice) : base (smartContractState)
     {
-        Assert(amount > 0, "Amount must be greater than 0");
+        Assert(tokenAmount > 0, "Amount must be greater than 0");
+        Assert(tokenPrice > 0, "Price must be greater than 0");
+        Assert(Message.Value >= tokenAmount * tokenPrice, "Balance is not enough to cover cost");
 
-        Token = token;
-        Owner = Message.Sender;
-        Price = Message.Value;
-        Amount = amount;
+        TokenAddress = tokenAddress;
+        Buyer = Message.Sender;
+        TokenAmount = tokenAmount;
+        TokenPrice = tokenPrice;
         IsActive = true;
     }
 
-    public Address Token
+    public Address TokenAddress
     {
-        get => PersistentState.GetAddress(nameof(Token));
-        private set => PersistentState.SetAddress(nameof(Token), value);
+        get => PersistentState.GetAddress(nameof(TokenAddress));
+        private set => PersistentState.SetAddress(nameof(TokenAddress), value);
     }
 
-    public Address Owner
+    public Address Buyer
     {
-        get => PersistentState.GetAddress(nameof(Owner));
-        private set => PersistentState.SetAddress(nameof(Owner), value);
+        get => PersistentState.GetAddress(nameof(Buyer));
+        private set => PersistentState.SetAddress(nameof(Buyer), value);
     }
 
-    public ulong Price
+    public ulong TokenPrice
     {
-        get => PersistentState.GetUInt64(nameof(Price));
-        private set => PersistentState.SetUInt64(nameof(Price), value);
+        get => PersistentState.GetUInt64(nameof(TokenPrice));
+        private set => PersistentState.SetUInt64(nameof(TokenPrice), value);
     }
 
-    public ulong Amount
+    public ulong TokenAmount
     {
-        get => PersistentState.GetUInt64(nameof(Amount));
-        private set => PersistentState.SetUInt64(nameof(Amount), value);
+        get => PersistentState.GetUInt64(nameof(TokenAmount));
+        private set => PersistentState.SetUInt64(nameof(TokenAmount), value);
     }
 
-    public bool IsActive 
+    public bool IsActive
     {
         get => PersistentState.GetBool(nameof(IsActive));
         private set => PersistentState.SetBool(nameof(IsActive), value);
     }
 
-    public Transaction Sell()
+    public Transaction Sell(ulong amountToPurchase)
     {
         Assert(IsActive);
-        Assert(Message.Sender != Owner);
+        Assert(Message.Sender != Buyer);
+        Assert(TokenAmount >= amountToPurchase);
 
-        var transferResult = Call(Token, 0, "TransferFrom", new object[] { Message.Sender, Owner, Amount });
+        var totalPrice = TokenPrice * amountToPurchase;
+        Assert(Balance >= totalPrice, "Not enough funds to cover purchase.");
+
+        var transferResult = Call(TokenAddress, 0, "TransferFrom", new object[] { Message.Sender, Buyer, amountToPurchase });
 
         Assert(transferResult.Success);
 
-        Transfer(Message.Sender, Price);
+        Transfer(Message.Sender, totalPrice);
+
+        var sufficientBalance = Balance < TokenPrice;
+        var updatedAmount = TokenAmount - amountToPurchase;
+
+        if (updatedAmount > 0 && sufficientBalance)
+        {
+            TokenAmount = updatedAmount;
+        }
+        else
+        {
+            CloseTradeExecute();
+        }
 
         var txResult = new Transaction
         {
-            Buyer = Owner,
+            Buyer = Buyer,
             Seller = Message.Sender,
-            SrcAmount = Amount,
-            CrsAmount = Price
+            TokenAmount = amountToPurchase,
+            TokenPrice = TokenPrice,
+            TotalPrice = totalPrice
         };
 
         Log(txResult);
 
-        IsActive = false;
-
         return txResult;
     }
 
-    public void CancelTrade()
+    public void CloseTrade()
     {
-        Assert(IsActive);
-        Assert(Message.Sender == Owner);
+        Assert(Message.Sender == Buyer);
 
-        Transfer(Owner, Balance);
+        CloseTradeExecute();
+    }
+
+    private void CloseTradeExecute()
+    {
+        if (Balance > 0)
+        {
+            Transfer(Buyer, Balance);
+        }
 
         IsActive = false;
+    }
+
+    public TradeDetails GetTradeDetails()
+    {
+        return new TradeDetails
+        {
+            IsActive = IsActive,
+            TokenAddress = TokenAddress,
+            TokenPrice = TokenPrice,
+            TokenAmount = TokenAmount,
+            ContractBalance = Balance
+        };
     }
 
     public struct Transaction
     {
-        public Address Buyer;
+        [Index]
         public Address Seller;
-        public ulong CrsAmount;
-        public ulong SrcAmount;
+        public Address Buyer;
+        public ulong TokenAmount;
+        public ulong TokenPrice;
+        public ulong TotalPrice;
+    }
+
+    public struct TradeDetails
+    {
+        public bool IsActive;
+        public ulong TokenAmount;
+        public ulong TokenPrice;
+        public Address TokenAddress;
+        public ulong ContractBalance;
     }
 }
