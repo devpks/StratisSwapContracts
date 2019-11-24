@@ -65,10 +65,8 @@ public class BuyOffer : SmartContract
 
         Transfer(Message.Sender, totalPrice);
 
-        var sufficientBalance = Balance >= TokenPrice;
         var updatedAmount = TokenAmount - amountToPurchase;
-
-        if (updatedAmount > 0 && sufficientBalance)
+        if (updatedAmount > 0)
         {
             TokenAmount = updatedAmount;
         }
