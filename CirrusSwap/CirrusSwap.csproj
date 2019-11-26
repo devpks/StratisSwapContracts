@@ -7,13 +7,5 @@
   <ItemGroup>
     <PackageReference Include="Stratis.SmartContracts" Version="1.2.1" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Compile Remove="Contracts\SwapWallet.cs" />
-    <Compile Remove="Contracts\OrderBook.cs" />
-    <Compile Remove="Contracts\OrderBooks.cs" />
-    <Compile Remove="Models\Transaction.cs" />
-    <Compile Remove="Models\Buyer.cs" />
-    <Compile Remove="Models\Seller.cs" />
-  </ItemGroup>
+    
 </Project>

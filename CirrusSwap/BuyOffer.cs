@@ -114,7 +114,8 @@ public class BuyOffer : SmartContract
             TokenAddress = TokenAddress,
             TokenPrice = TokenPrice,
             TokenAmount = TokenAmount,
-            ContractBalance = Balance
+            ContractBalance = Balance,
+            TradeType = nameof(BuyOffer)
         };
     }
 
@@ -135,5 +136,6 @@ public class BuyOffer : SmartContract
         public ulong TokenPrice;
         public Address TokenAddress;
         public ulong ContractBalance;
+        public string TradeType;
     }
 }

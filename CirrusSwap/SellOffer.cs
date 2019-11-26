@@ -108,7 +108,9 @@ public class SellOffer : SmartContract
             IsActive = IsActive,
             TokenAddress = TokenAddress,
             TokenPrice = TokenPrice,
-            TokenAmount = TokenAmount
+            TokenAmount = TokenAmount,
+            SellerAddress = Seller,
+            TradeType = "Sell"
         };
     }
 
@@ -128,5 +130,7 @@ public class SellOffer : SmartContract
         public ulong TokenAmount;
         public ulong TokenPrice;
         public Address TokenAddress;
+        public Address SellerAddress;
+        public string TradeType;
     }
 }
