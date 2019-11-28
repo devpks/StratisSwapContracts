@@ -53,7 +53,7 @@ public class SellOffer : SmartContract
     {
         Assert(IsActive);
         Assert(Message.Sender != Seller);
-        Assert(amountToPurchase <= TokenAmount);
+        Assert(TokenAmount >= amountToPurchase);
 
         var totalPrice = TokenPrice * amountToPurchase;
         Assert(Message.Value >= totalPrice, "Not enough funds to cover purchase.");
@@ -110,7 +110,7 @@ public class SellOffer : SmartContract
             TokenPrice = TokenPrice,
             TokenAmount = TokenAmount,
             SellerAddress = Seller,
-            TradeType = "Sell"
+            TradeType = nameof(SellOffer)
         };
     }
 

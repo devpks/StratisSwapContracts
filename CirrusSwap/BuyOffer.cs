@@ -69,6 +69,7 @@ public class BuyOffer : SmartContract
         if (updatedAmount > 0)
         {
             TokenAmount = updatedAmount;
+            // leftover amount return to Buyer?
         }
         else
         {
