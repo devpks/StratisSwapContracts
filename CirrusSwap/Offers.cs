@@ -26,7 +26,6 @@ public class Offers : SmartContract
         public Address Owner;
         [Index]
         public Address TokenAddress;
-        [Index]
         public Address ContractAddress;
         public ulong TokenAmount;
         public ulong TokenPrice;

@@ -85,10 +85,12 @@ namespace CirrusSwap.Tests
             Assert.ThrowsAny<SmartContractAssertException>(() => new BuyOffer(MockContractState.Object, TokenAddress, amount, price));
         }
 
-        [Theory]
-        [InlineData(500_000_000, 50, 10_000_000)]
-        public void Success_GetTradeDetails(ulong value, ulong price, ulong amount)
+        [Fact]
+        public void Success_GetTradeDetails()
         {
+            ulong value = 500_000_000;
+            ulong price = 10_000_000;
+            ulong amount = 50;
             var trade = NewBuyOffer(Buyer, value, amount, price);
             var actualTradeDetails = trade.GetTradeDetails();
             var expectedTradeDetails = new TradeDetails
@@ -97,7 +99,8 @@ namespace CirrusSwap.Tests
                 TokenAmount = amount,
                 TokenPrice = price,
                 TokenAddress = TokenAddress,
-                ContractBalance = value
+                ContractBalance = value,
+                TradeType = nameof(BuyOffer)
             };
 
             Assert.Equal(expectedTradeDetails, actualTradeDetails);
@@ -115,7 +118,7 @@ namespace CirrusSwap.Tests
         }
 
         [Fact]
-        public void CloseTrade_Success_If_Sender_IsNot_Owner()
+        public void CloseTrade_Success_Sender_Is_Owner()
         {
             var trade = NewBuyOffer(Buyer, 1, 1, 1);
 
@@ -123,6 +126,7 @@ namespace CirrusSwap.Tests
 
             MockContractState.Verify(x => x.GetBalance, Times.AtLeastOnce);
             MockPersistentState.Verify(x => x.SetBool(nameof(IsActive), false), Times.Once);
+            MockPersistentState.Verify(x => x.GetAddress(nameof(Buyer)), Times.AtLeastOnce);
 
             MockContractState.Setup(x => x.GetBalance).Returns(() => 0);
             MockPersistentState.Setup(x => x.GetBool(nameof(IsActive))).Returns(false);
@@ -214,38 +218,67 @@ namespace CirrusSwap.Tests
         [Fact]
         public void SellMethod_Success_Has_Remaining_SrcTokenAmount()
         {
-            //var trade = NewBuyOffer(Buyer, 45, 4, 10);
-            //ulong amountToPurchase = 2;
-            //ulong tradeCost = amountToPurchase * trade.TokenPrice;
-            //ulong updatedContractBalance = trade.Balance - tradeCost;
+            var trade = NewBuyOffer(Buyer, 45, 4, 10);
 
-            //MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, SellerOne, 0));
+            MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, SellerOne, 0));
+            ulong amountToPurchase = 2;
+            ulong tradeCost = amountToPurchase * trade.TokenPrice;
+            ulong updatedContractBalance = trade.Balance - tradeCost;
 
-            //// Mock contract call
-            //MockInternalExecutor.Setup(s =>
-            //    s.Call(
-            //        It.IsAny<ISmartContractState>(),
-            //        It.IsAny<Address>(),
-            //        It.IsAny<ulong>(),
-            //        "TransferFrom",
-            //        It.IsAny<object[]>(),
-            //        It.IsAny<ulong>()))
-            //    .Returns(TransferResult.Transferred(true));
+            // Mock contract call
+            MockInternalExecutor.Setup(s =>
+                s.Call(
+                    It.IsAny<ISmartContractState>(),
+                    It.IsAny<Address>(),
+                    It.IsAny<ulong>(),
+                    "TransferFrom",
+                    It.IsAny<object[]>(),
+                    It.IsAny<ulong>()))
+                .Returns(TransferResult.Transferred(true));
 
-            //MockInternalExecutor.Setup(x => x.Transfer(It.IsAny<ISmartContractState>(), It.IsAny<Address>(), It.IsAny<ulong>()))
-            //    .Callback(() => MockContractState.Setup(x => x.GetBalance).Returns(() => updatedContractBalance));
+            MockInternalExecutor.Setup(x => x.Transfer(It.IsAny<ISmartContractState>(), It.IsAny<Address>(), It.IsAny<ulong>()))
+                .Callback(() => MockContractState.Setup(x => x.GetBalance).Returns(() => updatedContractBalance));
 
-            //trade.Sell(amountToPurchase);
+            trade.Sell(amountToPurchase);
 
-            //MockContractState.Verify(x => x.InternalTransactionExecutor
-            //    .Transfer(It.IsAny<ISmartContractState>(), SellerOne, tradeCost), Times.Once);
+            ulong updatedTokenAmount = trade.TokenAmount - amountToPurchase;
+            MockPersistentState.Setup(x => x.GetUInt64(nameof(TokenAmount))).Returns(updatedTokenAmount);
 
-            //MockPersistentState.Verify(x => x.SetBool(nameof(IsActive), false), Times.Once);
+            MockContractState.Verify(x => x.InternalTransactionExecutor
+                .Transfer(It.IsAny<ISmartContractState>(), SellerOne, tradeCost), Times.Once);
 
-            //MockContractState.Verify(x => x.InternalTransactionExecutor
-            //    .Transfer(It.IsAny<ISmartContractState>(), Buyer, trade.Balance), Times.Once);
+            MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<Transaction>()), Times.Once);
 
-            //MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<Transaction>()), Times.Once);
+            // Second trade
+            MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, SellerTwo, 0));
+            amountToPurchase = 2;
+            tradeCost = amountToPurchase * trade.TokenPrice;
+
+            // Mock contract call
+            MockInternalExecutor.Setup(s =>
+                s.Call(
+                    It.IsAny<ISmartContractState>(),
+                    It.IsAny<Address>(),
+                    It.IsAny<ulong>(),
+                    "TransferFrom",
+                    It.IsAny<object[]>(),
+                    It.IsAny<ulong>()))
+                .Returns(TransferResult.Transferred(true));
+
+            trade.Sell(amountToPurchase);
+
+            // Transfer the 2nd seller the amount of crs
+            MockContractState.Verify(x => x.InternalTransactionExecutor
+                .Transfer(It.IsAny<ISmartContractState>(), SellerTwo, tradeCost), Times.Once);
+
+            // Shouldn't have enough balance to continue, close contract
+            MockPersistentState.Verify(x => x.SetBool(nameof(IsActive), false), Times.Once);
+
+            // Return any balance to the buyer/owner
+            MockContractState.Verify(x => x.InternalTransactionExecutor
+                .Transfer(It.IsAny<ISmartContractState>(), Buyer, trade.Balance), Times.Once);
+
+            MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<Transaction>()), Times.AtLeast(2));
         }
 
         [Fact]

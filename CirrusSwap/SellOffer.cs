@@ -3,6 +3,14 @@ using Stratis.SmartContracts;
 [Deploy]
 public class SellOffer : SmartContract
 {
+    /// <summary>
+    /// Simple sell offer contract providing functionality to accept crs tokens from
+    /// buyers on a successful src transfer.
+    /// </summary>
+    /// <param name="smartContractState">The execution state for the contract.</param>
+    /// <param name="tokenAddress">The address of the src token being sold.</param>
+    /// <param name="tokenAmount">The amount of the src token to sell.</param>
+    /// <param name="tokenPrice">The price for each src token.</param>
     public SellOffer(
         ISmartContractState smartContractState, 
         Address tokenAddress, 
@@ -49,6 +57,11 @@ public class SellOffer : SmartContract
         private set => PersistentState.SetBool(nameof(IsActive), value);
     }
 
+    /// <summary>
+    /// Method for buyers to call to transfer crs tokens for src.
+    /// </summary>
+    /// <param name="amountToPurchase">The amount of src tokens willing to buy.</param>
+    /// <returns><see cref="Transaction"/></returns>
     public Transaction Buy(ulong amountToPurchase)
     {
         Assert(IsActive);
@@ -94,7 +107,10 @@ public class SellOffer : SmartContract
         return txResult;
     }
 
-    public void CancelTrade()
+    /// <summary>
+    /// Closes offer from further trades
+    /// </summary>
+    public void CloseTrade()
     {
         Assert(Message.Sender == Seller);
 
