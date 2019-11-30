@@ -9,6 +9,12 @@ public class Offers : SmartContract
     public void AddOffer(string tradeAction, ulong tokenAmount, ulong tokenPrice,
         Address tokenAddress, Address contractAddress)
     {
+        Assert(tradeAction == "Buy" || tradeAction == "Sell");
+        Assert(tokenAmount > 0);
+        Assert(tokenPrice > 0);
+        Assert(tokenAddress != Address.Zero);
+        Assert(contractAddress != Address.Zero);
+
         Log(new Offer
         {
             Owner = Message.Sender,
