@@ -3,12 +3,17 @@
 [Deploy]
 public class SoftwareConfig : SmartContract
 {
+    /// <summary>
+    /// Manages version and json configurations for software projects.
+    /// </summary>
+    /// <param name="smartContractState">The execution state for the contract.</param>
+    /// <param name="version">Current version of the application</param>
+    /// <param name="config">Json payload to store with version</param>
     public SoftwareConfig(ISmartContractState smartContractState, string version, string config)
         : base(smartContractState)
     {
-        UpdateAdmin(Message.Sender, true);
-        // Should we set this, is defaut string.Empty?
-        Version = version ?? "0.0.0";
+        UpdateAdminExecute(Message.Sender, true);
+        Version = version;
         UpdateConfig(version, config);
     }
 
@@ -65,6 +70,11 @@ public class SoftwareConfig : SmartContract
     {
         Assert(IsAdmin(Message.Sender));
 
+        UpdateAdminExecute(address, value);
+    }
+
+    private void UpdateAdminExecute(Address address, bool value)
+    {
         PersistentState.SetBool($"{AdminKey}:{address}", value);
 
         Log(new UpdateRoleLog
@@ -93,17 +103,27 @@ public class SoftwareConfig : SmartContract
 
     public struct UpdateRoleLog
     {
+        [Index]
         public Address Admin;
+
+        [Index]
         public Address UpdatedAddress;
-        public bool UpdatedValue;
+
         public string Action;
+
+        public bool UpdatedValue;
     }
 
     public struct UpdateConfigLog
     {
-        public string Version;
-        public string Config;
+        [Index]
         public Address Blame;
+
+        [Index]
+        public string Version;
+
+        public string Config;
+
         public string Role;
     }
 }
