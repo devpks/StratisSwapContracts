@@ -4,7 +4,7 @@
 public class SoftwareConfig : SmartContract
 {
     /// <summary>
-    /// Manages version and json configurations for software projects.
+    /// Manages versions and small json configurations for software projects.
     /// </summary>
     /// <param name="smartContractState">The execution state for the contract.</param>
     /// <param name="version">Current version of the application</param>
@@ -14,7 +14,7 @@ public class SoftwareConfig : SmartContract
     {
         UpdateAdminExecute(Message.Sender, true);
         Version = version;
-        UpdateConfig(version, config);
+        UpdateConfigExecute(version, config);
     }
 
     private const string AdminKey = "Admin";
@@ -34,7 +34,11 @@ public class SoftwareConfig : SmartContract
 
     public string GetConfigByVersion(string version)
     {
-        return PersistentState.GetString($"{ConfigKey}:{version}");
+        var serializedKey = GetSerializedKey(version);
+
+        byte[] payload = PersistentState.GetBytes(serializedKey);
+
+        return Serializer.ToString(payload);
     }
 
     public bool IsAdmin(Address address)
@@ -54,15 +58,23 @@ public class SoftwareConfig : SmartContract
 
         Assert(isAdmin || isContributor);
 
+        UpdateConfigExecute(version, config);
+    }
+
+    private void UpdateConfigExecute(string version, string config)
+    {
         Version = version;
-        PersistentState.SetString($"{ConfigKey}:{version}", config);
+
+        var serializedKey = GetSerializedKey(version);
+        var serializedConfig = this.Serializer.Serialize(config);
+
+        PersistentState.SetBytes(serializedKey, serializedConfig);
 
         Log(new UpdateConfigLog
         {
             Version = version,
             Config = config,
-            Blame = Message.Sender,
-            Role = isAdmin ? AdminKey : ContributorKey
+            Blame = Message.Sender
         });
     }
 
@@ -101,6 +113,13 @@ public class SoftwareConfig : SmartContract
         });
     }
 
+    private byte[] GetSerializedKey(string version)
+    {
+        var key = $"{ConfigKey}:{version}";
+
+        return Serializer.Serialize(key);
+    }
+
     public struct UpdateRoleLog
     {
         [Index]
@@ -123,7 +142,5 @@ public class SoftwareConfig : SmartContract
         public string Version;
 
         public string Config;
-
-        public string Role;
     }
 }
