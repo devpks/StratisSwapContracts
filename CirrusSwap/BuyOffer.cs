@@ -94,7 +94,8 @@ public class BuyOffer : SmartContract
             Seller = Message.Sender,
             TokenAmount = amountToPurchase,
             TokenPrice = TokenPrice,
-            TotalPrice = totalPrice
+            TotalPrice = totalPrice,
+            Block = Block.Number
         };
 
         Log(txResult);
@@ -143,6 +144,7 @@ public class BuyOffer : SmartContract
         public ulong TokenAmount;
         public ulong TokenPrice;
         public ulong TotalPrice;
+        public ulong Block;
     }
 
     public struct TradeDetails

@@ -32,7 +32,7 @@ namespace CirrusSwap.Tests
         private Offers createNewOffersContract()
         {
             MockContractState.Setup(x => x.Message).Returns(new Message(OffersContractAddress, Sender, 0));
-
+            MockContractState.Setup(x => x.Block.Number).Returns(12345);
             var contract = new Offers(MockContractState.Object);
 
             return contract;
@@ -54,7 +54,8 @@ namespace CirrusSwap.Tests
                 ContractAddress = TradeContractAddress,
                 TokenAmount = tokenAmount,
                 TokenPrice = tokenPrice,
-                TradeAction = tradeAction
+                TradeAction = tradeAction,
+                Block = contract.Block.Number
             };
 
             MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), expectedLog), Times.Once);

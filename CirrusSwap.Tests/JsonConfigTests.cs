@@ -2,18 +2,18 @@
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts;
 using Xunit;
-using static SoftwareConfig;
+using static JsonConfig;
 
 namespace CirrusSwap.Tests
 {
-    public class SoftwareConfigTests
+    public class JsonConfigTests
     {
         private readonly Mock<ISmartContractState> MockContractState;
         private readonly Mock<IPersistentState> MockPersistentState;
         private readonly Mock<IContractLogger> MockContractLogger;
         private readonly Mock<IInternalTransactionExecutor> MockInternalExecutor;
 
-        public SoftwareConfigTests()
+        public JsonConfigTests()
         {
             MockContractLogger = new Mock<IContractLogger>();
             MockPersistentState = new Mock<IPersistentState>();

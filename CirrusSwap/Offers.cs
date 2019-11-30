@@ -22,7 +22,8 @@ public class Offers : SmartContract
             TokenAmount = tokenAmount,
             TokenPrice = tokenPrice,
             TokenAddress = tokenAddress,
-            ContractAddress = contractAddress
+            ContractAddress = contractAddress,
+            Block = Block.Number
         });
     }
 
@@ -30,11 +31,18 @@ public class Offers : SmartContract
     {
         [Index]
         public Address Owner;
+
         [Index]
         public Address TokenAddress;
+
         public Address ContractAddress;
+
         public ulong TokenAmount;
+
         public ulong TokenPrice;
+
         public string TradeAction;
+
+        public ulong Block;
     }
 }

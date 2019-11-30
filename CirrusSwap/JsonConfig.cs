@@ -1,45 +1,22 @@
 ﻿using Stratis.SmartContracts;
 
 [Deploy]
-public class SoftwareConfig : SmartContract
+public class JsonConfig : SmartContract
 {
     /// <summary>
-    /// Manages versions and small json configurations for software projects.
+    /// Manages small json configurations for software projects.
     /// </summary>
     /// <param name="smartContractState">The execution state for the contract.</param>
-    /// <param name="version">Current version of the application</param>
-    /// <param name="config">Json payload to store with version</param>
-    public SoftwareConfig(ISmartContractState smartContractState, string version, string config)
+    /// <param name="config">Json payload to log</param>
+    public JsonConfig(ISmartContractState smartContractState, string config)
         : base(smartContractState)
     {
         UpdateAdminExecute(Message.Sender, true);
-        Version = version;
-        UpdateConfigExecute(version, config);
+        UpdateConfigExecute(config);
     }
 
     private const string AdminKey = "Admin";
     private const string ContributorKey = "Contributor";
-    private const string ConfigKey = "Config";
-
-    public string Version
-    {
-        get => PersistentState.GetString(nameof(Version));
-        private set => PersistentState.SetString(nameof(Version), value);
-    }
-
-    public string GetCurrentConfig()
-    {
-        return GetConfigByVersion(Version);
-    }
-
-    public string GetConfigByVersion(string version)
-    {
-        var serializedKey = GetSerializedKey(version);
-
-        byte[] payload = PersistentState.GetBytes(serializedKey);
-
-        return Serializer.ToString(payload);
-    }
 
     public bool IsAdmin(Address address)
     {
@@ -49,33 +26,6 @@ public class SoftwareConfig : SmartContract
     public bool IsContributor(Address address)
     {
         return PersistentState.GetBool($"{ContributorKey}:{address}");
-    }
-
-    public void UpdateConfig(string version, string config)
-    {
-        var isAdmin = IsAdmin(Message.Sender);
-        var isContributor = IsContributor(Message.Sender);
-
-        Assert(isAdmin || isContributor);
-
-        UpdateConfigExecute(version, config);
-    }
-
-    private void UpdateConfigExecute(string version, string config)
-    {
-        Version = version;
-
-        var serializedKey = GetSerializedKey(version);
-        var serializedConfig = this.Serializer.Serialize(config);
-
-        PersistentState.SetBytes(serializedKey, serializedConfig);
-
-        Log(new UpdateConfigLog
-        {
-            Version = version,
-            Config = config,
-            Blame = Message.Sender
-        });
     }
 
     public void UpdateAdmin(Address address, bool value)
@@ -94,7 +44,8 @@ public class SoftwareConfig : SmartContract
             Admin = Message.Sender,
             UpdatedAddress = address,
             UpdatedValue = value,
-            Action = nameof(UpdateAdmin)
+            Action = nameof(UpdateAdmin),
+            Block = Block.Number
         });
     }
 
@@ -109,15 +60,29 @@ public class SoftwareConfig : SmartContract
             Admin = Message.Sender,
             UpdatedAddress = address,
             UpdatedValue = value,
-            Action = nameof(UpdateContributor)
+            Action = nameof(UpdateContributor),
+            Block = Block.Number
         });
     }
 
-    private byte[] GetSerializedKey(string version)
+    public void UpdateConfig(string config)
     {
-        var key = $"{ConfigKey}:{version}";
+        var isAdmin = IsAdmin(Message.Sender);
+        var isContributor = IsContributor(Message.Sender);
 
-        return Serializer.Serialize(key);
+        Assert(isAdmin || isContributor);
+
+        UpdateConfigExecute(config);
+    }
+
+    private void UpdateConfigExecute(string config)
+    {
+        Log(new ConfigLog
+        {
+            Config = config,
+            Blame = Message.Sender,
+            Block = Block.Number
+        });
     }
 
     public struct UpdateRoleLog
@@ -131,16 +96,17 @@ public class SoftwareConfig : SmartContract
         public string Action;
 
         public bool UpdatedValue;
+
+        public ulong Block;
     }
 
-    public struct UpdateConfigLog
+    public struct ConfigLog
     {
         [Index]
         public Address Blame;
 
-        [Index]
-        public string Version;
-
         public string Config;
+
+        public ulong Block;
     }
 }

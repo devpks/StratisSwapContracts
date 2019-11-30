@@ -99,7 +99,8 @@ public class SellOffer : SmartContract
             Seller = Seller,
             TokenAmount = amountToPurchase,
             TokenPrice = TokenPrice,
-            TotalPrice = totalPrice
+            TotalPrice = totalPrice,
+            Block = Block.Number
         };
 
         Log(txResult);
@@ -138,6 +139,7 @@ public class SellOffer : SmartContract
         public ulong TokenAmount;
         public ulong TokenPrice;
         public ulong TotalPrice;
+        public ulong Block;
     }
 
     public struct TradeDetails

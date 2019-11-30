@@ -41,6 +41,7 @@ namespace CirrusSwap.Tests
         {
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, sender, value));
             MockContractState.Setup(x => x.GetBalance).Returns(() => value);
+            MockContractState.Setup(x => x.Block.Number).Returns(12345);
             MockPersistentState.Setup(x => x.GetAddress(nameof(Buyer))).Returns(Buyer);
             MockPersistentState.Setup(x => x.GetAddress(nameof(TokenAddress))).Returns(TokenAddress);
             MockPersistentState.Setup(x => x.GetUInt64(nameof(TokenAmount))).Returns(amount);
