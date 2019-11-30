@@ -1,10 +1,10 @@
-﻿using System;
-namespace CirrusSwap
+﻿using Stratis.SmartContracts;
+
+[Deploy]
+public class SoftwareConfig : SmartContract
 {
-    public class SoftwareConfig
+    public SoftwareConfig(ISmartContractState smartContractState) : base(smartContractState)
     {
-        public SoftwareConfig()
-        {
-        }
+
     }
 }
