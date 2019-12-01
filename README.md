@@ -59,7 +59,7 @@ A contract used to log and feed the frontend small, non version specific JSON da
 
 Tyler is a software developer and is building a DApp. He doesn't want any part of his DApp to talk to a centralized API but he needs to be able to update data without forcing users to upgrade the frontend. Tyler creates a **JsonConfig** contract so he can update small JSON configuration payloads for the frontend to interpret.
 
-_Note:_ Minifiy payload for better gas costs.
+_Note:_ Minifiy payload for cheaper gas costs.
 
 ```JSON
 {

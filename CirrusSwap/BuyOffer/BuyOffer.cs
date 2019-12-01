@@ -9,22 +9,22 @@ public class BuyOffer : SmartContract
     /// </summary>
     /// <param name="smartContractState">The execution state for the contract.</param>
     /// <param name="tokenAddress">The address of the src token being bought.</param>
-    /// <param name="tokenAmount">The amount of the src token to buy.</param>
     /// <param name="tokenPrice">The price for each src token.</param>
+    /// <param name="tokenAmount">The amount of the src token to buy.</param>
     public BuyOffer(
         ISmartContractState smartContractState, 
-        Address tokenAddress, 
-        ulong tokenAmount,
-        ulong tokenPrice) : base (smartContractState)
+        Address tokenAddress,
+        ulong tokenPrice,
+        ulong tokenAmount) : base (smartContractState)
     {
-        Assert(tokenAmount > 0, "Amount must be greater than 0");
         Assert(tokenPrice > 0, "Price must be greater than 0");
+        Assert(tokenAmount > 0, "Amount must be greater than 0");
         Assert(Message.Value >= tokenAmount * tokenPrice, "Balance is not enough to cover cost");
 
         TokenAddress = tokenAddress;
-        Buyer = Message.Sender;
-        TokenAmount = tokenAmount;
         TokenPrice = tokenPrice;
+        TokenAmount = tokenAmount;
+        Buyer = Message.Sender;
         IsActive = true;
     }
 
@@ -32,12 +32,6 @@ public class BuyOffer : SmartContract
     {
         get => PersistentState.GetAddress(nameof(TokenAddress));
         private set => PersistentState.SetAddress(nameof(TokenAddress), value);
-    }
-
-    public Address Buyer
-    {
-        get => PersistentState.GetAddress(nameof(Buyer));
-        private set => PersistentState.SetAddress(nameof(Buyer), value);
     }
 
     public ulong TokenPrice
@@ -50,6 +44,12 @@ public class BuyOffer : SmartContract
     {
         get => PersistentState.GetUInt64(nameof(TokenAmount));
         private set => PersistentState.SetUInt64(nameof(TokenAmount), value);
+    }
+
+    public Address Buyer
+    {
+        get => PersistentState.GetAddress(nameof(Buyer));
+        private set => PersistentState.SetAddress(nameof(Buyer), value);
     }
 
     public bool IsActive
@@ -90,10 +90,9 @@ public class BuyOffer : SmartContract
 
         var txResult = new Transaction
         {
-            Buyer = Buyer,
             Seller = Message.Sender,
-            TokenAmount = amountToPurchase,
             TokenPrice = TokenPrice,
+            TokenAmount = amountToPurchase,
             TotalPrice = totalPrice,
             Block = Block.Number
         };
@@ -103,9 +102,6 @@ public class BuyOffer : SmartContract
         return txResult;
     }
 
-    /// <summary>
-    /// Closes offer from further trades, returns contrat crs balance back to buyer
-    /// </summary>
     public void CloseTrade()
     {
         Assert(Message.Sender == Buyer);
@@ -127,12 +123,12 @@ public class BuyOffer : SmartContract
     {
         return new TradeDetails
         {
-            IsActive = IsActive,
             TokenAddress = TokenAddress,
             TokenPrice = TokenPrice,
             TokenAmount = TokenAmount,
             ContractBalance = Balance,
-            TradeType = nameof(BuyOffer)
+            TradeType = nameof(BuyOffer),
+            IsActive = IsActive,
         };
     }
 
@@ -140,20 +136,19 @@ public class BuyOffer : SmartContract
     {
         [Index]
         public Address Seller;
-        public Address Buyer;
-        public ulong TokenAmount;
         public ulong TokenPrice;
+        public ulong TokenAmount;
         public ulong TotalPrice;
         public ulong Block;
     }
 
     public struct TradeDetails
     {
-        public bool IsActive;
-        public ulong TokenAmount;
-        public ulong TokenPrice;
         public Address TokenAddress;
+        public ulong TokenPrice;
+        public ulong TokenAmount;
         public ulong ContractBalance;
         public string TradeType;
+        public bool IsActive;
     }
 }

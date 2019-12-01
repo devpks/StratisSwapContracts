@@ -9,21 +9,21 @@ public class SellOffer : SmartContract
     /// </summary>
     /// <param name="smartContractState">The execution state for the contract.</param>
     /// <param name="tokenAddress">The address of the src token being sold.</param>
-    /// <param name="tokenAmount">The amount of the src token to sell.</param>
     /// <param name="tokenPrice">The price for each src token.</param>
+    /// <param name="tokenAmount">The amount of the src token to sell.</param>
     public SellOffer(
         ISmartContractState smartContractState, 
-        Address tokenAddress, 
-        ulong tokenAmount, 
-        ulong tokenPrice) : base (smartContractState)
+        Address tokenAddress,
+        ulong tokenPrice,
+        ulong tokenAmount) : base (smartContractState)
     {
-        Assert(tokenAmount > 0, "Amount must be greater than 0");
         Assert(tokenPrice > 0, "Price must be greater than 0");
+        Assert(tokenAmount > 0, "Amount must be greater than 0");
 
         TokenAddress = tokenAddress;
-        Seller = Message.Sender;
-        TokenAmount = tokenAmount;
         TokenPrice = tokenPrice;
+        TokenAmount = tokenAmount;
+        Seller = Message.Sender;
         IsActive = true;
     }
 
@@ -31,12 +31,6 @@ public class SellOffer : SmartContract
     {
         get => PersistentState.GetAddress(nameof(TokenAddress));
         private set => PersistentState.SetAddress(nameof(TokenAddress), value);
-    }
-
-    public Address Seller
-    {
-        get => PersistentState.GetAddress(nameof(Seller));
-        private set => PersistentState.SetAddress(nameof(Seller), value);
     }
 
     public ulong TokenPrice
@@ -49,6 +43,12 @@ public class SellOffer : SmartContract
     {
         get => PersistentState.GetUInt64(nameof(TokenAmount));
         private set => PersistentState.SetUInt64(nameof(TokenAmount), value);
+    }
+
+    public Address Seller
+    {
+        get => PersistentState.GetAddress(nameof(Seller));
+        private set => PersistentState.SetAddress(nameof(Seller), value);
     }
 
     public bool IsActive
@@ -96,9 +96,8 @@ public class SellOffer : SmartContract
         var txResult = new Transaction
         {
             Buyer = Message.Sender,
-            Seller = Seller,
-            TokenAmount = amountToPurchase,
             TokenPrice = TokenPrice,
+            TokenAmount = amountToPurchase,
             TotalPrice = totalPrice,
             Block = Block.Number
         };
@@ -108,9 +107,6 @@ public class SellOffer : SmartContract
         return txResult;
     }
 
-    /// <summary>
-    /// Closes offer from further trades
-    /// </summary>
     public void CloseTrade()
     {
         Assert(Message.Sender == Seller);
@@ -122,12 +118,12 @@ public class SellOffer : SmartContract
     {
         return new TradeDetails
         {
-            IsActive = IsActive,
+            SellerAddress = Seller,
             TokenAddress = TokenAddress,
             TokenPrice = TokenPrice,
             TokenAmount = TokenAmount,
-            SellerAddress = Seller,
-            TradeType = nameof(SellOffer)
+            TradeType = nameof(SellOffer),
+            IsActive = IsActive,
         };
     }
 
@@ -135,20 +131,19 @@ public class SellOffer : SmartContract
     {
         [Index]
         public Address Buyer;
-        public Address Seller;
-        public ulong TokenAmount;
         public ulong TokenPrice;
+        public ulong TokenAmount;
         public ulong TotalPrice;
         public ulong Block;
     }
 
     public struct TradeDetails
     {
-        public bool IsActive;
-        public ulong TokenAmount;
-        public ulong TokenPrice;
-        public Address TokenAddress;
         public Address SellerAddress;
+        public Address TokenAddress;
+        public ulong TokenPrice;
+        public ulong TokenAmount;
         public string TradeType;
+        public bool IsActive;
     }
 }

@@ -37,7 +37,7 @@ namespace CirrusSwap.Tests
             ContractAddress = "0x0000000000000000000000000000000000000005".HexToAddress();
         }
 
-        private BuyOffer NewBuyOffer(Address sender, ulong value, ulong amount, ulong price)
+        private BuyOffer NewBuyOffer(Address sender, ulong value, ulong price, ulong amount)
         {
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, sender, value));
             MockContractState.Setup(x => x.GetBalance).Returns(() => value);
@@ -48,7 +48,7 @@ namespace CirrusSwap.Tests
             MockPersistentState.Setup(x => x.GetUInt64(nameof(TokenPrice))).Returns(price);
             MockPersistentState.Setup(x => x.GetBool(nameof(IsActive))).Returns(true);
 
-            return new BuyOffer(MockContractState.Object, TokenAddress, amount, price);
+            return new BuyOffer(MockContractState.Object, TokenAddress, price, amount);
         }
 
         [Theory]
@@ -56,7 +56,7 @@ namespace CirrusSwap.Tests
         [InlineData(50_000_000, 10_000_000, 5)]
         public void Creates_New_Trade(ulong value, ulong price, ulong amount)
         {
-            var trade = NewBuyOffer(Buyer, value, amount, price);
+            var trade = NewBuyOffer(Buyer, value, price, amount);
 
             MockPersistentState.Verify(x => x.SetAddress(nameof(Buyer), Buyer), Times.Once);
             Assert.Equal(Buyer, trade.Buyer);
@@ -92,16 +92,16 @@ namespace CirrusSwap.Tests
             ulong value = 500_000_000;
             ulong price = 10_000_000;
             ulong amount = 50;
-            var trade = NewBuyOffer(Buyer, value, amount, price);
+            var trade = NewBuyOffer(Buyer, value, price, amount);
             var actualTradeDetails = trade.GetTradeDetails();
             var expectedTradeDetails = new TradeDetails
             {
-                IsActive = true,
-                TokenAmount = amount,
-                TokenPrice = price,
                 TokenAddress = TokenAddress,
+                TokenPrice = price,
+                TokenAmount = amount,
                 ContractBalance = value,
-                TradeType = nameof(BuyOffer)
+                TradeType = nameof(BuyOffer),
+                IsActive = true
             };
 
             Assert.Equal(expectedTradeDetails, actualTradeDetails);
@@ -219,7 +219,7 @@ namespace CirrusSwap.Tests
         [Fact]
         public void SellMethod_Success_Has_Remaining_SrcTokenAmount()
         {
-            var trade = NewBuyOffer(Buyer, 45, 4, 10);
+            var trade = NewBuyOffer(Buyer, 45, 10, 4);
 
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, SellerOne, 0));
             ulong amountToPurchase = 2;
@@ -285,7 +285,7 @@ namespace CirrusSwap.Tests
         [Fact]
         public void SellMethod_Success_ClosesTrade_Because_TokenAmount_Is_Zero()
         {
-            var trade = NewBuyOffer(Buyer, 25, 2, 10);
+            var trade = NewBuyOffer(Buyer, 25, 10, 2);
             ulong amountToPurchase = 2;
             ulong tradeCost = amountToPurchase * trade.TokenPrice;
             ulong updatedContractBalance = trade.Balance - tradeCost;

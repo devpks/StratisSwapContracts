@@ -37,7 +37,7 @@ namespace CirrusSwap.Tests
             ContractAddress = "0x0000000000000000000000000000000000000005".HexToAddress();
         }
 
-        private SellOffer NewSellOffer(Address sender, ulong value, ulong amount, ulong price)
+        private SellOffer NewSellOffer(Address sender, ulong value, ulong price, ulong amount)
         {
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, sender, value));
             MockContractState.Setup(x => x.GetBalance).Returns(() => value);
@@ -48,14 +48,14 @@ namespace CirrusSwap.Tests
             MockPersistentState.Setup(x => x.GetUInt64(nameof(TokenPrice))).Returns(price);
             MockPersistentState.Setup(x => x.GetBool(nameof(IsActive))).Returns(true);
 
-            return new SellOffer(MockContractState.Object, TokenAddress, amount, price);
+            return new SellOffer(MockContractState.Object, TokenAddress, price, amount);
         }
 
         [Theory]
         [InlineData(0, 10_000_000, 5_000_000_000)]
         public void Creates_New_Trade(ulong value, ulong price, ulong amount)
         {
-            var trade = NewSellOffer(Seller, value, amount, price);
+            var trade = NewSellOffer(Seller, value, price, amount);
 
             MockPersistentState.Verify(x => x.SetAddress(nameof(Seller), Seller));
             Assert.Equal(Seller, trade.Seller);
@@ -90,17 +90,17 @@ namespace CirrusSwap.Tests
             ulong amount = 1;
             ulong price = 1;
 
-            var trade = NewSellOffer(Seller, value, amount, price);
+            var trade = NewSellOffer(Seller, value, price, amount);
 
             var actualTradeDetails = trade.GetTradeDetails();
             var expectedTradeDetails = new TradeDetails
             {
-                IsActive = true,
-                TokenAmount = amount,
-                TokenPrice = price,
-                TokenAddress = TokenAddress,
                 SellerAddress = Seller,
-                TradeType = nameof(SellOffer)
+                TokenAddress = TokenAddress,
+                TokenPrice = price,
+                TokenAmount = amount,
+                TradeType = nameof(SellOffer),
+                IsActive = true
             };
 
             Assert.Equal(expectedTradeDetails, actualTradeDetails);
