@@ -73,7 +73,6 @@ public class SellOffer : SmartContract
         Assert(Message.Value >= totalPrice, "Not enough funds to cover purchase.");
 
         var transferResult = Call(TokenAddress, 0, "TransferFrom", new object[] { Seller, Message.Sender, TokenAmount });
-
         Assert(transferResult.Success);
 
         Transfer(Seller, totalPrice);
@@ -132,19 +131,28 @@ public class SellOffer : SmartContract
     {
         [Index]
         public Address Buyer;
+
         public ulong TokenPrice;
+
         public ulong TokenAmount;
+
         public ulong TotalPrice;
+
         public ulong Block;
     }
 
     public struct TradeDetails
     {
         public Address SellerAddress;
+
         public Address TokenAddress;
+
         public ulong TokenPrice;
+
         public ulong TokenAmount;
+
         public string TradeType;
+
         public bool IsActive;
     }
 }

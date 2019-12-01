@@ -136,19 +136,28 @@ public class BuyOffer : SmartContract
     {
         [Index]
         public Address Seller;
+
         public ulong TokenPrice;
+
         public ulong TokenAmount;
+
         public ulong TotalPrice;
+
         public ulong Block;
     }
 
     public struct TradeDetails
     {
         public Address TokenAddress;
+
         public ulong TokenPrice;
+
         public ulong TokenAmount;
+
         public ulong ContractBalance;
+
         public string TradeType;
+
         public bool IsActive;
     }
 }
