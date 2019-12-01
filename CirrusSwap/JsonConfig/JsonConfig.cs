@@ -67,10 +67,8 @@ public class JsonConfig : SmartContract
 
     public void UpdateConfig(string config)
     {
-        var isAdmin = IsAdmin(Message.Sender);
-        var isContributor = IsContributor(Message.Sender);
 
-        Assert(isAdmin || isContributor);
+        Assert(IsAdmin(Message.Sender) || IsContributor(Message.Sender));
 
         UpdateConfigExecute(config);
     }
