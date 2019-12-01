@@ -66,7 +66,8 @@ public class SellOffer : SmartContract
     {
         Assert(IsActive);
         Assert(Message.Sender != Seller);
-        Assert(TokenAmount >= amountToPurchase);
+
+        amountToPurchase = TokenAmount >= amountToPurchase ? amountToPurchase : TokenAmount;
 
         var totalPrice = TokenPrice * amountToPurchase;
         Assert(Message.Value >= totalPrice, "Not enough funds to cover purchase.");

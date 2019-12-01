@@ -162,19 +162,6 @@ namespace CirrusSwap.Tests
         }
 
         [Fact]
-        public void SellMethod_Fails_If_TokenAmount_IsLessThan_AmountToPurchase()
-        {
-            var trade = NewBuyOffer(Buyer, 1, 1, 1);
-
-            MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, SellerOne, 0));
-
-            ulong amountToPurchase = 2;
-
-            Assert.True(amountToPurchase > trade.TokenAmount);
-            Assert.ThrowsAny<SmartContractAssertException>(() => trade.Sell(amountToPurchase));
-        }
-
-        [Fact]
         public void SellMethod_Fails_If_TotalPrice_IsLessThan_ContractBalance()
         {
             var trade = NewBuyOffer(Buyer, 1, 1, 1);
@@ -282,12 +269,15 @@ namespace CirrusSwap.Tests
             MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<Transaction>()), Times.AtLeast(2));
         }
 
-        [Fact]
-        public void SellMethod_Success_ClosesTrade_Because_TokenAmount_Is_Zero()
+        [Theory]
+        [InlineData(25, 10, 2, 2)]
+        [InlineData(25, 10, 2, 3)]
+        public void SellMethod_Success_ClosesTrade_RemainingTokenAmount_IsZero(ulong value, ulong price, ulong amount, ulong amountToPurchase)
         {
-            var trade = NewBuyOffer(Buyer, 25, 10, 2);
-            ulong amountToPurchase = 2;
-            ulong tradeCost = amountToPurchase * trade.TokenPrice;
+            amountToPurchase = amount >= amountToPurchase ? amountToPurchase : amount;
+
+            var trade = NewBuyOffer(Buyer, value, price, amount);
+            ulong tradeCost = amountToPurchase * price;
             ulong updatedContractBalance = trade.Balance - tradeCost;
 
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, SellerOne, 0));
