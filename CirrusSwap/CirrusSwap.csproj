@@ -11,4 +11,10 @@
   <ItemGroup>
     <Compile Remove="ContractConfig.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="BuyOffer\" />
+    <Folder Include="SellOffer\" />
+    <Folder Include="JsonConfig\" />
+    <Folder Include="Offers\" />
+  </ItemGroup>
 </Project>

@@ -15,7 +15,6 @@ namespace CirrusSwap.Tests
         private readonly Address AdminOne;
         private readonly Address AdminTwo;
         private readonly Address ContributorOne;
-        private readonly Address ContributorTwo;
         private readonly Address Unauthorized;
         private readonly Address ContractAddress;
 
@@ -31,7 +30,6 @@ namespace CirrusSwap.Tests
             AdminOne = "0x0000000000000000000000000000000000000001".HexToAddress();
             AdminTwo = "0x0000000000000000000000000000000000000002".HexToAddress();
             ContributorOne = "0x0000000000000000000000000000000000000003".HexToAddress();
-            ContributorTwo = "0x0000000000000000000000000000000000000004".HexToAddress();
             Unauthorized = "0x0000000000000000000000000000000000000005".HexToAddress();
             ContractAddress = "0x0000000000000000000000000000000000000006".HexToAddress();
         }
