@@ -39,7 +39,7 @@ public class JsonConfig : SmartContract
     {
         PersistentState.SetBool($"{AdminKey}:{address}", value);
 
-        Log(new UpdateRoleLog
+        Log(new RoleLog
         {
             Admin = Message.Sender,
             UpdatedAddress = address,
@@ -53,9 +53,9 @@ public class JsonConfig : SmartContract
     {
         Assert(IsAdmin(Message.Sender));
 
-        PersistentState.SetBool($"{AdminKey}:{address}", value);
+        PersistentState.SetBool($"{ContributorKey}:{address}", value);
 
-        Log(new UpdateRoleLog
+        Log(new RoleLog
         {
             Admin = Message.Sender,
             UpdatedAddress = address,
@@ -85,7 +85,7 @@ public class JsonConfig : SmartContract
         });
     }
 
-    public struct UpdateRoleLog
+    public struct RoleLog
     {
         [Index]
         public Address Admin;
