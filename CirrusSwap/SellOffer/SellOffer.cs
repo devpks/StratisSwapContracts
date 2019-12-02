@@ -72,8 +72,8 @@ public class SellOffer : SmartContract
         var totalPrice = TokenPrice * amountToPurchase;
         Assert(Message.Value >= totalPrice, "Not enough funds to cover purchase.");
 
-        var transferResult = Call(TokenAddress, 0, "TransferFrom", new object[] { Seller, Message.Sender, TokenAmount });
-        Assert(transferResult.Success);
+        var transferResult = Call(TokenAddress, 0, "TransferFrom", new object[] { Seller, Message.Sender, amountToPurchase });
+        Assert((bool)transferResult.ReturnValue == true);
 
         Transfer(Seller, totalPrice);
 

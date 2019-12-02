@@ -74,7 +74,7 @@ public class BuyOffer : SmartContract
         Assert(Balance >= totalPrice, "Not enough funds to cover purchase.");
 
         var transferResult = Call(TokenAddress, 0, "TransferFrom", new object[] { Message.Sender, Buyer, amountToPurchase });
-        Assert(transferResult.Success);
+        Assert((bool)transferResult.ReturnValue == true);
 
         Transfer(Message.Sender, totalPrice);
 
