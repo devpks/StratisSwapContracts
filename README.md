@@ -29,7 +29,7 @@ This contract will release SRC tokens to buyers after validations. After transfe
 
 ## [Orders Contract](./CirrusSwap/Orders)
 
-A contract used to log new orders so users can fill orders without direct interaction. Orders are logged once, from the UI after creation and not called from within **BuyOrder** or **SellOrder** contracts.
+A contract used to log new orders so users can find orders to fill without direct interaction. Orders are logged once, from the UI after creation and not called from within **BuyOrder** or **SellOrder** contracts.
 
 ## Orders Use Case
 
@@ -45,10 +45,9 @@ public struct Order
 
   [Index]
   public Address TokenAddress;
+  
   public Address ContractAddress;
-  public ulong TokenAmount;
-  public ulong TokenPrice;
-  public string OrderType;
+
   public ulong Block;
 }
 ```

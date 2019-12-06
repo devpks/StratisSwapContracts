@@ -54,7 +54,7 @@ namespace CirrusSwap.Tests
         [Theory]
         [InlineData(500_000_000, 10_000_000, 50)]
         [InlineData(50_000_000, 10_000_000, 5)]
-        public void Creates_New_Trade(ulong value, ulong price, ulong amount)
+        public void Creates_New_Order(ulong value, ulong price, ulong amount)
         {
             var order =NewBuyOrder(Buyer, value, price, amount);
 
@@ -79,7 +79,7 @@ namespace CirrusSwap.Tests
         [InlineData(0, 10_000_000, 50)]
         [InlineData(5_000_000_000, 0, 50)]
         [InlineData(5_000_000_000, 10_000_000, 0)]
-        public void Create_NewTrade_Fails_Invalid_Parameters(ulong value, ulong price, ulong amount)
+        public void Create_NewOrder_Fails_Invalid_Parameters(ulong value, ulong price, ulong amount)
         {
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, Buyer, value));
 
@@ -107,7 +107,7 @@ namespace CirrusSwap.Tests
             Assert.Equal(expectedOrderDetails, actualOrderDetails);
         }
 
-        #region Close Trade
+        #region Close Order
         [Fact]
         public void CloseOrder_Failure_If_Sender_IsNot_Owner()
         {
@@ -206,12 +206,14 @@ namespace CirrusSwap.Tests
         [Fact]
         public void SellMethod_Success_Has_Remaining_SrcTokenAmount()
         {
-            var order =NewBuyOrder(Buyer, 45, 10, 4);
+            ulong tokenAmount = 4;
+            var order = NewBuyOrder(Buyer, 45, 10, tokenAmount);
 
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, SellerOne, 0));
             ulong amountToPurchase = 2;
-            ulong tradeCost = amountToPurchase * order.TokenPrice;
-            ulong updatedContractBalance = order.Balance - tradeCost;
+            ulong expectedNewTokenAmount = 2;
+            ulong orderCost = amountToPurchase * order.TokenPrice;
+            ulong updatedContractBalance = order.Balance - orderCost;
 
             // Mock contract call
             MockInternalExecutor.Setup(s =>
@@ -227,20 +229,26 @@ namespace CirrusSwap.Tests
             MockInternalExecutor.Setup(x => x.Transfer(It.IsAny<ISmartContractState>(), It.IsAny<Address>(), It.IsAny<ulong>()))
                 .Callback(() => MockContractState.Setup(x => x.GetBalance).Returns(() => updatedContractBalance));
 
+            MockPersistentState.Setup(x => x.SetUInt64(nameof(TokenAmount), expectedNewTokenAmount))
+                .Callback(() => MockPersistentState.Setup(x => x.GetUInt64(nameof(TokenAmount))).Returns(expectedNewTokenAmount));
+
             order.Sell(amountToPurchase);
 
-            ulong updatedTokenAmount = order.TokenAmount - amountToPurchase;
-            MockPersistentState.Setup(x => x.GetUInt64(nameof(TokenAmount))).Returns(updatedTokenAmount);
+            MockPersistentState.Verify(x => x.SetUInt64(nameof(TokenAmount), expectedNewTokenAmount));
+
+            //ulong updatedTokenAmount = order.TokenAmount - amountToPurchase;
+            //MockPersistentState.Setup(x => x.GetUInt64(nameof(TokenAmount))).Returns(updatedTokenAmount);
 
             MockContractState.Verify(x => x.InternalTransactionExecutor
-                .Transfer(It.IsAny<ISmartContractState>(), SellerOne, tradeCost), Times.Once);
+                .Transfer(It.IsAny<ISmartContractState>(), SellerOne, orderCost), Times.Once);
 
             MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<Transaction>()), Times.Once);
 
-            // Second trade
+            // Second order
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, SellerTwo, 0));
             amountToPurchase = 2;
-            tradeCost = amountToPurchase * order.TokenPrice;
+            expectedNewTokenAmount = 0;
+            orderCost = amountToPurchase * order.TokenPrice;
 
             // Mock contract call
             MockInternalExecutor.Setup(s =>
@@ -253,11 +261,16 @@ namespace CirrusSwap.Tests
                     It.IsAny<ulong>()))
                 .Returns(TransferResult.Transferred(true));
 
+            MockPersistentState.Setup(x => x.SetUInt64(nameof(TokenAmount), expectedNewTokenAmount))
+                .Callback(() => MockPersistentState.Setup(x => x.GetUInt64(nameof(TokenAmount))).Returns(expectedNewTokenAmount));
+
             order.Sell(amountToPurchase);
 
             // Transfer the 2nd seller the amount of crs
             MockContractState.Verify(x => x.InternalTransactionExecutor
-                .Transfer(It.IsAny<ISmartContractState>(), SellerTwo, tradeCost), Times.Once);
+                .Transfer(It.IsAny<ISmartContractState>(), SellerTwo, orderCost), Times.Once);
+
+            MockPersistentState.Verify(x => x.SetUInt64(nameof(TokenAmount), expectedNewTokenAmount));
 
             // Shouldn't have enough balance to continue, close contract
             MockPersistentState.Verify(x => x.SetBool(nameof(IsActive), false), Times.Once);
@@ -272,13 +285,13 @@ namespace CirrusSwap.Tests
         [Theory]
         [InlineData(25, 10, 2, 2)]
         [InlineData(25, 10, 2, 3)]
-        public void SellMethod_Success_ClosesTrade_RemainingTokenAmount_IsZero(ulong value, ulong price, ulong amount, ulong amountToPurchase)
+        public void SellMethod_Success_ClosesOrder_RemainingTokenAmount_IsZero(ulong value, ulong price, ulong amount, ulong amountToPurchase)
         {
             amountToPurchase = amount >= amountToPurchase ? amountToPurchase : amount;
 
             var order =NewBuyOrder(Buyer, value, price, amount);
-            ulong tradeCost = amountToPurchase * price;
-            ulong updatedContractBalance = order.Balance - tradeCost;
+            ulong orderCost = amountToPurchase * price;
+            ulong updatedContractBalance = order.Balance - orderCost;
 
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, SellerOne, 0));
 
@@ -296,10 +309,15 @@ namespace CirrusSwap.Tests
             MockInternalExecutor.Setup(x => x.Transfer(It.IsAny<ISmartContractState>(), It.IsAny<Address>(), It.IsAny<ulong>()))
                 .Callback(() => MockContractState.Setup(x => x.GetBalance).Returns(() => updatedContractBalance));
 
+            MockPersistentState.Setup(x => x.SetUInt64(nameof(TokenAmount), amount - amountToPurchase))
+                .Callback(() => MockPersistentState.Setup(x => x.GetUInt64(nameof(TokenAmount))).Returns(amount - amountToPurchase));
+
             order.Sell(amountToPurchase);
 
             MockContractState.Verify(x => x.InternalTransactionExecutor
-                .Transfer(It.IsAny<ISmartContractState>(), SellerOne, tradeCost), Times.Once);
+                .Transfer(It.IsAny<ISmartContractState>(), SellerOne, orderCost), Times.Once);
+
+            MockPersistentState.Verify(x => x.SetUInt64(nameof(TokenAmount), 0), Times.Once);
 
             MockPersistentState.Verify(x => x.SetBool(nameof(IsActive), false), Times.Once);
 

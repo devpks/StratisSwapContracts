@@ -78,12 +78,9 @@ public class SellOrder : SmartContract
             Transfer(Message.Sender, balance);
         }
 
-        var updatedAmount = TokenAmount - amountToPurchase;
-        if (updatedAmount > 0)
-        {
-            TokenAmount = updatedAmount;
-        }
-        else
+        TokenAmount -= amountToPurchase;
+
+        if (TokenAmount == 0)
         {
             IsActive = false;
         }
