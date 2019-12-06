@@ -29,72 +29,42 @@ namespace CirrusSwap.Tests
             OrdersContractAddress = "0x0000000000000000000000000000000000000005".HexToAddress();
         }
 
-        private Orders createNewOrdersContract()
+        private Orders CreateNewOrdersContract()
         {
             MockContractState.Setup(x => x.Message).Returns(new Message(OrdersContractAddress, Sender, 0));
             MockContractState.Setup(x => x.Block.Number).Returns(12345);
-            var contract = new Orders(MockContractState.Object);
+            var orders = new Orders(MockContractState.Object);
 
-            return contract;
+            return orders;
         }
 
-        [Theory]
-        [InlineData(1, 2, "Buy")]
-        [InlineData(3, 4, "Sell")]
-        public void Success_Logs_New_Order(ulong tokenAmount, ulong tokenPrice, string orderAction)
+        [Fact]
+        public void Success_Logs_New_Order()
         {
-            var contract = createNewOrdersContract();
+            var orders = CreateNewOrdersContract();
 
-            contract.AddOrder(orderAction, tokenAmount, tokenPrice, TokenAddress, OrderContractAddress);
+            orders.AddOrder(TokenAddress, OrderContractAddress);
 
             var expectedLog = new Order
             {
                 Owner = Sender,
                 TokenAddress = TokenAddress,
-                ContractAddress = OrderContractAddress,
-                TokenAmount = tokenAmount,
-                TokenPrice = tokenPrice,
-                OrderType = orderAction,
-                Block = contract.Block.Number
+                OrderAddress = OrderContractAddress,
+                Block = orders.Block.Number
             };
 
             MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), expectedLog), Times.Once);
         }
 
         [Fact]
-        public void Failure_Log_New_Order_Invalid_OrderType()
-        {
-            var incorrectAction = "IncorrectOrderType";
-            var contract = createNewOrdersContract();
-
-            Assert.ThrowsAny<SmartContractAssertException>(()
-                => contract.AddOrder(incorrectAction, 1, 2, TokenAddress, OrderContractAddress));
-
-            MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<Order>()), Times.Never);
-        }
-
-        [Theory]
-        [InlineData(1, 0)]
-        [InlineData(0, 1)]
-        public void Failure_Log_New_Order_Invalid_TokenAmount_Or_TokenPrice(ulong tokenAmount, ulong tokenPrice)
-        {
-            var contract = createNewOrdersContract();
-
-            Assert.ThrowsAny<SmartContractAssertException>(()
-                => contract.AddOrder("Buy", tokenAmount, tokenPrice, TokenAddress, OrderContractAddress));
-
-            MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<Order>()), Times.Never);
-        }
-
-        [Fact]
         public void Failure_Log_New_Order_Invalid_TokenAddress()
         {
             var tokenAddress = Address.Zero;
-            var contract = createNewOrdersContract();
+            var orders = CreateNewOrdersContract();
 
 
             Assert.ThrowsAny<SmartContractAssertException>(()
-                => contract.AddOrder("Buy", 1, 1, tokenAddress, OrderContractAddress));
+                => orders.AddOrder(tokenAddress, OrderContractAddress));
 
             MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<Order>()), Times.Never);
         }
@@ -103,10 +73,10 @@ namespace CirrusSwap.Tests
         public void Failure_Log_New_Order_Invalid_OrderContractAddress()
         {
             var orderContractAddress = Address.Zero;
-            var contract = createNewOrdersContract();
+            var orders = CreateNewOrdersContract();
 
             Assert.ThrowsAny<SmartContractAssertException>(()
-                => contract.AddOrder("Buy", 1, 1, TokenAddress, orderContractAddress));
+                => orders.AddOrder(TokenAddress, orderContractAddress));
 
             MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<Order>()), Times.Never);
         }

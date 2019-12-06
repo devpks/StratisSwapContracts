@@ -1,25 +1,24 @@
-# Offers Contract
+# orders Contract
 
-A contract used to log new offers so users can fill trades without direct interaction. Offers are logged once, from the UI after creation and not called from within **BuyOffer** or **SellOffer** contracts.
+A contract used to log new orders so users can find orders to fill without direct interaction. Orders are logged once, from the UI after creation and not called from within **Buyorder** or **Sellorder** contracts.
 
 ## Use Case
 
-Johnny just made a **BuyOffer** and now has a contract address where users can sell him SRC tokens. He doesn't want to go search for sellers, so he sends his offer details to the **Offers** contract. This will log his input and anyone can search the logs, for free, for orders to fill. If the seller is using CirrusSwapUI, this will make finding orders to fill easy.
+Johnny just made a **BuyOrder** and now has a contract address where users can sell him SRC tokens. He doesn't want to go search for sellers, so he sends his order details to the **Orders** contract. This will log his input and anyone can search the logs, for free, for orders to fill. If the seller is using CirrusSwapUI, this will make finding orders to fill easy.
 
 ## Example Struct
 
 ```csharp
-public struct Offer
+public struct Order
 {
   [Index]
   public Address Owner;
 
   [Index]
   public Address TokenAddress;
-  public Address ContractAddress;
-  public ulong TokenAmount;
-  public ulong TokenPrice;
-  public string TradeAction;
+
+  public Address OrderAddress;
+
   public ulong Block;
 }
 ```
