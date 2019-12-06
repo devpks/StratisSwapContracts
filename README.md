@@ -2,43 +2,43 @@
 
 Cirrus Swap is a set of four contracts contracts working together with a UI to create a decentralized exchange on the Cirrus Sidechain for Stratis.
 
-1. [BuyOffer Contract](#buy-offer-contract)
-2. [SellOffer Contract](#sell-offer-contract)
-3. [Offers Contract](#offers-contract)
+1. [BuyOrder Contract](#buy-order-contract)
+2. [SellOrder Contract](#sell-order-contract)
+3. [Orders Contract](#orders-contract)
 4. [JsonConfig Contract](#json-config-contract)
 
-## [Buy Offer Contract](./CirrusSwap/BuyOffer)
+## [Buy Order Contract](./CirrusSwap/BuyOrder)
 
 A contract used to secure CRS and release after successful transfers of requested SRC token at a specific price.
 
-### Buy Offer Use Case
+### Buy Order Use Case
 
-Johnny wants to buy 10 SRC tokens at .1 CRS each. Johnny creates a new **BuyOffer** contract specifying the token address he wants to buy, how many and at what price (in satoshis). The contract will validate Johnny's inputs and also ensure that he sent enough CRS tokens to cover the buy order. The contract will hold the CRS tokens until the order is filled or Johnny cancels the contract.
+Johnny wants to buy 10 SRC tokens at .1 CRS each. Johnny creates a new **BuyOrder** contract specifying the token address he wants to buy, how many and at what price (in satoshis). The contract will validate Johnny's inputs and also ensure that he sent enough CRS tokens to cover the buy order. The contract will hold the CRS tokens until the order is filled or Johnny cancels the contract.
 
-## [Sell Offer Contract](./CirrusSwap/SellOffer)
+## [Sell Order Contract](./CirrusSwap/SellOrder)
 
 A contract used to request a specific amount of an SRC token at a specifed price. Receives CRS tokens after successfully transferring SRC tokens.
 
-### Sell Offer Use Case
+### Sell Order Use Case
 
-Johnny wants to sell 10 SRC tokens at .1 CRS each. Johnny creates a new **SellOffer** contract specifying the token address he wants to sell, how many and at what price (in satoshis). The contract will validate Johnny's inputs and be created.
+Johnny wants to sell 10 SRC tokens at .1 CRS each. Johnny creates a new **SellOrder** contract specifying the token address he wants to sell, how many and at what price (in satoshis). The contract will validate Johnny's inputs and be created.
 
-After the contract is created, Johnny must call the `Approve` method on the token's contract that he wants to sell and _Approve_ the new offer's contract address to spend at least the amount that he is offering to sell. If Johnny is using CirrusSwapUI, this will do it for him but comes with a cost of the extra calls gas price.
+After the contract is created, Johnny must call the `Approve` method on the token's contract that he wants to sell and _Approve_ the new order's contract address to spend at least the amount that he is ordering to sell. If Johnny is using CirrusSwapUI, this will do it for him but comes with a cost of the extra calls gas price.
 
 This contract will release SRC tokens to buyers after validations. After transfer success of SRC, the contract will release CRS to the seller.
 
-## [Offers Contract](./CirrusSwap/Offers)
+## [Orders Contract](./CirrusSwap/Orders)
 
-A contract used to log new offers so users can fill trades without direct interaction. Offers are logged once, from the UI after creation and not called from within **BuyOffer** or **SellOffer** contracts.
+A contract used to log new orders so users can fill orders without direct interaction. Orders are logged once, from the UI after creation and not called from within **BuyOrder** or **SellOrder** contracts.
 
-## Offers Use Case
+## Orders Use Case
 
-Johnny just made a **BuyOffer** and now has a contract address where users can sell him SRC tokens. He doesn't want to go search for sellers, so he sends his offer details to the **Offers** contract. This will log his input and anyone can search the logs, for free, for orders to fill. If the seller is using CirrusSwapUI, this will make finding orders to fill easy.
+Johnny just made a **BuyOrder** and now has a contract address where users can sell him SRC tokens. He doesn't want to go search for sellers, so he sends his order details to the **Orders** contract. This will log his input and anyone can search the logs, for free, for orders to fill. If the seller is using CirrusSwapUI, this will make finding orders to fill easy.
 
 ### Example Struct
 
 ```csharp
-public struct Offer
+public struct Order
 {
   [Index]
   public Address Owner;
@@ -48,7 +48,7 @@ public struct Offer
   public Address ContractAddress;
   public ulong TokenAmount;
   public ulong TokenPrice;
-  public string TradeAction;
+  public string OrderType;
   public ulong Block;
 }
 ```
@@ -69,7 +69,7 @@ _Note:_ Minifiy payload for cheaper gas costs.
 {
   "LatestUiVersion": "1.0.0",
   "LatestUiDownload": "https://github.com/mrtpain/CirrusSwapUI/releases",
-  "OffersContractAddress": "Cam6mmCcCv4zZN65ppF28tHLhT2DfwuU26",
+  "OrdersContractAddress": "Cam6mmCcCv4zZN65ppF28tHLhT2DfwuU26",
   "FancyMessage": "December means Christmas!"
 }
 ```

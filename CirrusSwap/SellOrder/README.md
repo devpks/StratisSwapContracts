@@ -1,12 +1,12 @@
-# Sell Offer Contract
+# Sell Order Contract
 
 A contract used to request a specific amount of an SRC token at a specifed price. Receives CRS tokens after successfully transferring SRC tokens.
 
 ## Use Case
 
-Johnny wants to sell 10 SRC tokens at .1 CRS each. Johnny creates a new **SellOffer** contract specifying the token address he wants to sell, how many and at what price (in satoshis). The contract will validate Johnny's inputs and be created.
+Johnny wants to sell 10 SRC tokens at .1 CRS each. Johnny creates a new **SellOrder** contract specifying the token address he wants to sell, how many and at what price (in satoshis). The contract will validate Johnny's inputs and be created.
 
-After the contract is created, Johnny must call the `Approve` method on the token's contract that he wants to sell and _Approve_ the new offer's contract address to spend at least the amount that he is offering to sell. If Johnny is using CirrusSwapUI, this will do it for him but comes with a cost of the extra calls gas price.
+After the contract is created, Johnny must call the `Approve` method on the token's contract that he wants to sell and _Approve_ the new order's contract address to spend at least the amount that he is ordering to sell. If Johnny is using CirrusSwapUI, this will do it for him but comes with a cost of the extra calls gas price.
 
 This contract will release SRC tokens to buyers after validations. After transfer success of SRC, the contract will release CRS to the seller.
 
@@ -34,37 +34,37 @@ This contract will release SRC tokens to buyers after validations. After transfe
 
 After the contract is created the new contract address must be approved to spend the amount of SRC tokens specified in the `tokenAmount` parameter. Using CirrusSwapUI, this will be done for you.
 
-- Call the `Approve(Address tradeContractAddress, ulong oldBalance, ulong newBalance)` method at the `tokenAddress` of the SRC tokent to be traded.
-  - Supply the new trade contract address to spend the `tokenAmount` specified.
-- Upon success, the `tradeContract` address will have an allowance that will be used to settle the transaction.
+- Call the `Approve(Address orderContractAddress, ulong oldBalance, ulong newBalance)` method at the `tokenAddress` of the SRC tokent to be orderd.
+  - Supply the new order contract address to spend the `tokenAmount` specified.
+- Upon success, the `orderContractAddress` will have an allowance that will be used to settle the transaction.
 
 ## Closing the contract
 
 The creator of the contract has abilities to cancel the contract. This sets the `IsActive` flag to false preventing further user interaction.
 
-- Call the `CloseTrade` method on the trade contract address
+- Call the `CloseOrder` method on the order contract address
 
-## Get Trade Details
+## Get Order Details
 
-Prior to attempting to settle a contract, make a local call to `GetTradeDetails` to preview the contracts state. Returns a `TradeDetails` struct.
+Prior to attempting to settle a contract, make a local call to `GetOrderDetails` to preview the contracts state. Returns a `OrderDetails` struct.
 
 ```csharp
-public struct TradeDetails
+public struct OrderDetails
 {
   public Address SellerAddress;  // Address of the seller
   public Address TokenAddress;   // Address of SRC token for sale
   public ulong TokenPrice;       // Ask price of each SRC token
   public ulong TokenAmount;      // Amount of SRCToken for sale
-  public string TradeType;       // Returns "SellOffer"
-  public bool IsActive;          // True if trade is open
+  public string OrderType;       // Returns "SellOrder"
+  public bool IsActive;          // True if order is open
 }
 ```
 
 **Note** - Prior to attempting to settle a sell contract, you may also want to make a local call to the SRC tokens contract to verify that the contract address is approved to send the necessary amount of SRC tokens. Safe gaurds are in place for the contract isn't properly approved, but gas for calling the contract will be lost.
 
-## Filling a Trade
+## Filling a Order
 
-For sell offers, all trades looking to fill the contract will call the `Buy(ulong amountToPurchase)` method supplying the amount of SRC tokens they'd like to purchase as a parameter.
+For sell orders, all orders looking to fill the contract will call the `Buy(ulong amountToPurchase)` method supplying the amount of SRC tokens they'd like to purchase as a parameter.
 
 - Validations are run against contract details and buyer supplied parameters.
 - SRC token amount is sent to `Message.Sender` (the buyer).

@@ -1,24 +1,24 @@
 ﻿using Stratis.SmartContracts;
 
 [Deploy]
-public class Offers : SmartContract
+public class Orders : SmartContract
 {
-    public Offers(ISmartContractState smartContractState) : base(smartContractState)
+    public Orders(ISmartContractState smartContractState) : base(smartContractState)
     { }
 
-    public void AddOffer(string tradeAction, ulong tokenAmount, ulong tokenPrice,
+    public void AddOrder(string orderType, ulong tokenAmount, ulong tokenPrice,
         Address tokenAddress, Address contractAddress)
     {
-        Assert(tradeAction == "Buy" || tradeAction == "Sell");
+        Assert(orderType == "Buy" || orderType == "Sell");
         Assert(tokenAmount > 0);
         Assert(tokenPrice > 0);
         Assert(tokenAddress != Address.Zero);
         Assert(contractAddress != Address.Zero);
 
-        Log(new Offer
+        Log(new Order
         {
             Owner = Message.Sender,
-            TradeAction = tradeAction,
+            OrderType = orderType,
             TokenAmount = tokenAmount,
             TokenPrice = tokenPrice,
             TokenAddress = tokenAddress,
@@ -27,7 +27,7 @@ public class Offers : SmartContract
         });
     }
 
-    public struct Offer
+    public struct Order
     {
         [Index]
         public Address Owner;
@@ -41,7 +41,7 @@ public class Offers : SmartContract
 
         public ulong TokenPrice;
 
-        public string TradeAction;
+        public string OrderType;
 
         public ulong Block;
     }

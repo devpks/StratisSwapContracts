@@ -1,10 +1,10 @@
-# Buy Offer Contract
+# Buy Order Contract
 
 A contract used to secure CRS and release after successful transfers of requested SRC token at a specific price.
 
 ## Use Case
 
-Johnny wants to buy 10 SRC tokens at .1 CRS each. Johnny creates a new **BuyOffer** contract specifying the token address he wants to buy, how many and at what price (in satoshis). The contract will validate Johnny's inputs and also ensure that he sent enough CRS tokens to cover the buy order. The contract will hold the CRS tokens until the order is filled or Johnny cancels the contract.
+Johnny wants to buy 10 SRC tokens at .1 CRS each. Johnny creates a new **BuyOrder** contract specifying the token address he wants to buy, how many and at what price (in satoshis). The contract will validate Johnny's inputs and also ensure that he sent enough CRS tokens to cover the buy order. The contract will hold the CRS tokens until the order is filled or Johnny cancels the contract.
 
 ## Creating the Contract
 
@@ -30,29 +30,29 @@ a580d5560fd10ca6e7e6646b75ffdfa68d248d50b0f0aac8dc638f24f9ea7383
 
 The creator of the contract has abilities to cancel the contract. This sets the `IsActive` flag to false preventing further user interaction.
 
-- Call the `CloseTrade` method on the trade contract address
+- Call the `CloseOrder` method on the order contract address
 
-## Get Trade Details
+## Get Order Details
 
-Prior to attempting to settle a contract, make a local call to `GetTradeDetails` to preview the contracts state. Returns a `TradeDetails` struct.
+Prior to attempting to settle a contract, make a local call to `GetOrderDetails` to preview the contracts state. Returns a `OrderDetails` struct.
 
 ```csharp
-public struct TradeDetails
+public struct OrderDetails
 {
   public Address TokenAddress;   // Address of src token for sale
   public ulong TokenPrice;       // Ask price of each src token
   public ulong TokenAmount;      // Amount of srcToken for sale
   public ulong ContractBalance;  // Balance of CRS on the contract
-  public string TradeType;       // Returns "BuyOffer"
-  public bool IsActive;          // True if trade is open
+  public string OrderType;       // Returns "BuyOrder"
+  public bool IsActive;          // True if order is open
 }
 ```
 
 **Note** - Prior to attempting to settle a sell contract, you may also want to make a local call to the src tokens contract to verify that the contract address is approved to send the necessary amount of src tokens. Safe gaurds are in place for the contract isn't properly approved, but gas for calling the contract will be lost.
 
-## Filling a Trade
+## Filling a Order
 
-For buy offers, all trades looking to fill the contract will call the `Sell(ulong amountToPurchase)` method supplying the amount of src tokens they'd like to sell as a parameter.
+For buy orders, all orders looking to fill the contract will call the `Sell(ulong amountToPurchase)` method supplying the amount of src tokens they'd like to sell as a parameter.
 
 - Validations are run against contract details and buyer supplied parameters.
 - Src token amount is sent to the buyer.

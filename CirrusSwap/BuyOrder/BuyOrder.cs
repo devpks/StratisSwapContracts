@@ -1,17 +1,17 @@
 using Stratis.SmartContracts;
 
 [Deploy]
-public class BuyOffer : SmartContract
+public class BuyOrder : SmartContract
 {
     /// <summary>
-    /// Simple buy offer contract providing functionality to release crs tokens to
+    /// Simple buy order contract providing functionality to release crs tokens to
     /// sellers on a successful SRC transfer. 
     /// </summary>
     /// <param name="smartContractState">The execution state for the contract.</param>
     /// <param name="tokenAddress">The address of the src token being bought.</param>
     /// <param name="tokenPrice">The price for each src token.</param>
     /// <param name="tokenAmount">The amount of the src token to buy.</param>
-    public BuyOffer(
+    public BuyOrder(
         ISmartContractState smartContractState, 
         Address tokenAddress,
         ulong tokenPrice,
@@ -61,38 +61,38 @@ public class BuyOffer : SmartContract
     /// <summary>
     /// Method for sellers to call to transfer src tokens for crs.
     /// </summary>
-    /// <param name="amountToPurchase">The amount of src tokens willing to sell.</param>
+    /// <param name="amountToSell">The amount of src tokens willing to sell.</param>
     /// <returns><see cref="Transaction"/></returns>
-    public Transaction Sell(ulong amountToPurchase)
+    public Transaction Sell(ulong amountToSell)
     {
-        Assert(IsActive);
-        Assert(Message.Sender != Buyer);
+        Assert(IsActive, "Contract is not active.");
+        Assert(Message.Sender != Buyer, "Sender is owner.");
 
-        amountToPurchase = TokenAmount >= amountToPurchase ? amountToPurchase : TokenAmount;
+        amountToSell = TokenAmount >= amountToSell ? amountToSell : TokenAmount;
 
-        var totalPrice = TokenPrice * amountToPurchase;
+        var totalPrice = TokenPrice * amountToSell;
         Assert(Balance >= totalPrice, "Not enough funds to cover purchase.");
 
-        var transferResult = Call(TokenAddress, 0, "TransferFrom", new object[] { Message.Sender, Buyer, amountToPurchase });
-        Assert((bool)transferResult.ReturnValue == true);
+        var transferResult = Call(TokenAddress, 0, "TransferFrom", new object[] { Message.Sender, Buyer, amountToSell });
+        Assert((bool)transferResult.ReturnValue == true, "SRC transfer failure.");
 
         Transfer(Message.Sender, totalPrice);
 
-        var updatedAmount = TokenAmount - amountToPurchase;
+        var updatedAmount = TokenAmount - amountToSell;
         if (updatedAmount > 0)
         {
             TokenAmount = updatedAmount;
         }
         else
         {
-            CloseTradeExecute();
+            CloseOrderExecute();
         }
 
         var txResult = new Transaction
         {
             Seller = Message.Sender,
             TokenPrice = TokenPrice,
-            TokenAmount = amountToPurchase,
+            TokenAmount = amountToSell,
             TotalPrice = totalPrice,
             Block = Block.Number
         };
@@ -102,14 +102,14 @@ public class BuyOffer : SmartContract
         return txResult;
     }
 
-    public void CloseTrade()
+    public void CloseOrder()
     {
         Assert(Message.Sender == Buyer);
 
-        CloseTradeExecute();
+        CloseOrderExecute();
     }
 
-    private void CloseTradeExecute()
+    private void CloseOrderExecute()
     {
         if (Balance > 0)
         {
@@ -119,15 +119,15 @@ public class BuyOffer : SmartContract
         IsActive = false;
     }
 
-    public TradeDetails GetTradeDetails()
+    public OrderDetails GetOrderDetails()
     {
-        return new TradeDetails
+        return new OrderDetails
         {
             TokenAddress = TokenAddress,
             TokenPrice = TokenPrice,
             TokenAmount = TokenAmount,
             ContractBalance = Balance,
-            TradeType = nameof(BuyOffer),
+            OrderType = nameof(BuyOrder),
             IsActive = IsActive,
         };
     }
@@ -146,7 +146,7 @@ public class BuyOffer : SmartContract
         public ulong Block;
     }
 
-    public struct TradeDetails
+    public struct OrderDetails
     {
         public Address TokenAddress;
 
@@ -156,7 +156,7 @@ public class BuyOffer : SmartContract
 
         public ulong ContractBalance;
 
-        public string TradeType;
+        public string OrderType;
 
         public bool IsActive;
     }
