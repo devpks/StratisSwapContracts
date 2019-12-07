@@ -17,6 +17,8 @@ namespace CirrusSwap.Tests
         private readonly Address ContributorOne;
         private readonly Address Unauthorized;
         private readonly Address ContractAddress;
+        private const string DefaultConfig = "{\"json\": \"Test\"}";
+        private const string UpdatedConfig = "{\"json\": \"Updated\"}";
 
         public JsonConfigTests()
         {
@@ -39,7 +41,8 @@ namespace CirrusSwap.Tests
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, AdminOne, 0));
             MockContractState.Setup(x => x.Block.Number).Returns(12345);
             MockPersistentState.Setup(x => x.GetBool($"Admin:{AdminOne}")).Returns(true);
-            return new JsonConfig(MockContractState.Object, "{\"json\": \"Test\"}");
+
+            return new JsonConfig(MockContractState.Object, DefaultConfig);
         }
 
         [Fact]
@@ -66,7 +69,7 @@ namespace CirrusSwap.Tests
 
             contract.UpdateAdmin(newAdminAddress, approval);
 
-            MockPersistentState.Verify(x => x.SetBool($"Admin:{newAdminAddress}", approval), Times.Once);
+            MockPersistentState.Verify(x => x.SetBool($"Admin:{AdminTwo}", approval), Times.Once);
 
             var expectedRoleLog = new RoleLog
             {
@@ -93,8 +96,16 @@ namespace CirrusSwap.Tests
 
             MockPersistentState.Verify(x => x.SetBool($"Admin:{newAdminAddress}", approval), Times.Never);
 
-            // Verify this only executed Once, the first time was when the contract was created.
-            MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<RoleLog>()), Times.Once);
+            var expectedRoleLog = new RoleLog
+            {
+                Admin = Unauthorized,
+                UpdatedAddress = newAdminAddress,
+                Action = nameof(contract.UpdateAdmin),
+                UpdatedValue = approval,
+                Block = contract.Block.Number
+            };
+
+            MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), expectedRoleLog), Times.Never);
         }
 
         [Theory]
@@ -136,8 +147,16 @@ namespace CirrusSwap.Tests
 
             MockPersistentState.Verify(x => x.SetBool($"Contributor:{newContributorAddress}", approval), Times.Never);
 
-            // Verify this only executed Once, the first time was when the contract was created.
-            MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<RoleLog>()), Times.Once);
+            var expectedRoleLog = new RoleLog
+            {
+                Admin = Unauthorized,
+                UpdatedAddress = newContributorAddress,
+                Action = nameof(contract.UpdateContributor),
+                UpdatedValue = approval,
+                Block = contract.Block.Number
+            };
+
+            MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), expectedRoleLog), Times.Never);
         }
 
         [Fact]
@@ -145,18 +164,17 @@ namespace CirrusSwap.Tests
         {
             var contract = createNewConfigContract();
             var sender = AdminOne;
-            var newConfig = "{\"json\": \"Updated Config\"}";
 
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, sender, 0));
 
-            contract.UpdateConfig(newConfig);
+            contract.UpdateConfig(UpdatedConfig);
 
             MockPersistentState.Verify(x => x.GetBool($"Admin:{sender}"), Times.Once);
 
             var expectedConfigLog = new ConfigLog
             {
                 Blame = sender,
-                Config = newConfig,
+                Config = UpdatedConfig,
                 Block = contract.Block.Number
             };
 
@@ -168,20 +186,19 @@ namespace CirrusSwap.Tests
         {
             var contract = createNewConfigContract();
             var sender = ContributorOne;
-            var newConfig = "{\"json\": \"Updated Config\"}";
 
             MockPersistentState.Setup(x => x.GetBool($"Contributor:{sender}")).Returns(true);
 
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, sender, 0));
 
-            contract.UpdateConfig(newConfig);
+            contract.UpdateConfig(UpdatedConfig);
 
             MockPersistentState.Verify(x => x.GetBool($"Contributor:{sender}"), Times.Once);
 
             var expectedConfigLog = new ConfigLog
             {
                 Blame = sender,
-                Config = newConfig,
+                Config = UpdatedConfig,
                 Block = contract.Block.Number
             };
 
@@ -193,17 +210,23 @@ namespace CirrusSwap.Tests
         {
             var contract = createNewConfigContract();
             var sender = Unauthorized;
-            var newConfig = "{\"json\": \"Updated Config\"}";
 
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, sender, 0));
 
-            Assert.ThrowsAny<SmartContractAssertException>(() => contract.UpdateConfig(newConfig));
+            Assert.ThrowsAny<SmartContractAssertException>(() => contract.UpdateConfig(UpdatedConfig));
 
             MockPersistentState.Verify(x => x.GetBool($"Contributor:{sender}"), Times.Once);
+
             MockPersistentState.Verify(x => x.GetBool($"Admin:{sender}"), Times.Once);
 
-            // Verify this only executed Once, the first time was when the contract was created.
-            MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<ConfigLog>()), Times.Once);
+            var expectedConfigLog = new ConfigLog
+            {
+                Blame = sender,
+                Config = UpdatedConfig,
+                Block = contract.Block.Number
+            };
+
+            MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), expectedConfigLog), Times.Never);
         }
     }
 }
