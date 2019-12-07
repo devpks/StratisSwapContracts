@@ -12,7 +12,7 @@ namespace CirrusSwap.Tests
         private readonly Mock<IPersistentState> MockPersistentState;
         private readonly Mock<IContractLogger> MockContractLogger;
         private readonly Address Sender;
-        private readonly Address TokenAddress;
+        private readonly Address Token;
         private readonly Address OrderContractAddress;
         private readonly Address OrdersContractAddress;
 
@@ -24,7 +24,7 @@ namespace CirrusSwap.Tests
             MockContractState.Setup(x => x.PersistentState).Returns(MockPersistentState.Object);
             MockContractState.Setup(x => x.ContractLogger).Returns(MockContractLogger.Object);
             Sender = "0x0000000000000000000000000000000000000001".HexToAddress();
-            TokenAddress = "0x0000000000000000000000000000000000000002".HexToAddress();
+            Token = "0x0000000000000000000000000000000000000002".HexToAddress();
             OrderContractAddress = "0x0000000000000000000000000000000000000003".HexToAddress();
             OrdersContractAddress = "0x0000000000000000000000000000000000000005".HexToAddress();
         }
@@ -33,9 +33,8 @@ namespace CirrusSwap.Tests
         {
             MockContractState.Setup(x => x.Message).Returns(new Message(OrdersContractAddress, Sender, 0));
             MockContractState.Setup(x => x.Block.Number).Returns(12345);
-            var orders = new Orders(MockContractState.Object);
 
-            return orders;
+            return new Orders(MockContractState.Object);
         }
 
         [Fact]
@@ -43,13 +42,13 @@ namespace CirrusSwap.Tests
         {
             var orders = CreateNewOrdersContract();
 
-            orders.AddOrder(TokenAddress, OrderContractAddress);
+            orders.AddOrder(Token, OrderContractAddress);
 
-            var expectedLog = new Order
+            var expectedLog = new OrderLog
             {
                 Owner = Sender,
-                TokenAddress = TokenAddress,
-                OrderAddress = OrderContractAddress,
+                Token = Token,
+                Order = OrderContractAddress,
                 Block = orders.Block.Number
             };
 
@@ -57,16 +56,15 @@ namespace CirrusSwap.Tests
         }
 
         [Fact]
-        public void Failure_Log_New_Order_Invalid_TokenAddress()
+        public void Failure_Log_New_Order_Invalid_Token()
         {
-            var tokenAddress = Address.Zero;
+            var token = Address.Zero;
             var orders = CreateNewOrdersContract();
 
-
             Assert.ThrowsAny<SmartContractAssertException>(()
-                => orders.AddOrder(tokenAddress, OrderContractAddress));
+                => orders.AddOrder(token, OrderContractAddress));
 
-            MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<Order>()), Times.Never);
+            MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<OrderLog>()), Times.Never);
         }
 
         [Fact]
@@ -76,9 +74,9 @@ namespace CirrusSwap.Tests
             var orders = CreateNewOrdersContract();
 
             Assert.ThrowsAny<SmartContractAssertException>(()
-                => orders.AddOrder(TokenAddress, orderContractAddress));
+                => orders.AddOrder(Token, orderContractAddress));
 
-            MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<Order>()), Times.Never);
+            MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<OrderLog>()), Times.Never);
         }
     }
 }

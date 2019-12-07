@@ -3,32 +3,35 @@
 [Deploy]
 public class Orders : SmartContract
 {
+    /// <summary>
+    /// Constructor for orders contract that logs general info specific to an order.
+    /// </summary>
+    /// <param name="smartContractState">The execution state for the contract.</param>
     public Orders(ISmartContractState smartContractState)
         : base(smartContractState) { }
 
-    public void AddOrder(Address tokenAddress, Address orderAddress)
+    public void AddOrder(Address token, Address order)
     {
-        Assert(tokenAddress != Address.Zero);
-        Assert(orderAddress != Address.Zero);
+        Assert(token != Address.Zero && order != Address.Zero);
 
-        Log(new Order
+        Log(new OrderLog
         {
             Owner = Message.Sender,
-            TokenAddress = tokenAddress,
-            OrderAddress = orderAddress,
+            Token = token,
+            Order = order,
             Block = Block.Number
         });
     }
 
-    public struct Order
+    public struct OrderLog
     {
         [Index]
         public Address Owner;
 
         [Index]
-        public Address TokenAddress;
+        public Address Token;
 
-        public Address OrderAddress;
+        public Address Order;
 
         public ulong Block;
     }
