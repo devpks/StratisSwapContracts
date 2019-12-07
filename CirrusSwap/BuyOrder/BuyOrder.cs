@@ -4,46 +4,45 @@ using Stratis.SmartContracts;
 public class BuyOrder : SmartContract
 {
     /// <summary>
-    /// Simple buy order contract providing functionality to release crs tokens to
-    /// sellers on a successful SRC transfer. 
+    /// Constructor for a buy order setting the token, price, and amount to buy.
     /// </summary>
     /// <param name="smartContractState">The execution state for the contract.</param>
-    /// <param name="tokenAddress">The address of the src token being bought.</param>
-    /// <param name="tokenPrice">The price for each src token.</param>
-    /// <param name="tokenAmount">The amount of the src token to buy.</param>
+    /// <param name="address">The address of the src token being bought.</param>
+    /// <param name="price">The price for each src token.</param>
+    /// <param name="amount">The amount of the src token to buy.</param>
     public BuyOrder(
         ISmartContractState smartContractState, 
-        Address tokenAddress,
-        ulong tokenPrice,
-        ulong tokenAmount) : base (smartContractState)
+        Address address,
+        ulong price,
+        ulong amount) : base (smartContractState)
     {
-        Assert(tokenPrice > 0, "Price must be greater than 0");
-        Assert(tokenAmount > 0, "Amount must be greater than 0");
-        Assert(Message.Value >= tokenAmount * tokenPrice, "Balance is not enough to cover cost");
+        Assert(price > 0, "Price must be greater than 0");
+        Assert(amount > 0, "Amount must be greater than 0");
+        Assert(Message.Value >= amount * price, "Balance is not enough to cover cost");
 
-        TokenAddress = tokenAddress;
-        TokenPrice = tokenPrice;
-        TokenAmount = tokenAmount;
+        Token = address;
+        Price = price;
+        Amount = amount;
         Buyer = Message.Sender;
         IsActive = true;
     }
 
-    public Address TokenAddress
+    public Address Token
     {
-        get => PersistentState.GetAddress(nameof(TokenAddress));
-        private set => PersistentState.SetAddress(nameof(TokenAddress), value);
+        get => PersistentState.GetAddress(nameof(Token));
+        private set => PersistentState.SetAddress(nameof(Token), value);
     }
 
-    public ulong TokenPrice
+    public ulong Price
     {
-        get => PersistentState.GetUInt64(nameof(TokenPrice));
-        private set => PersistentState.SetUInt64(nameof(TokenPrice), value);
+        get => PersistentState.GetUInt64(nameof(Price));
+        private set => PersistentState.SetUInt64(nameof(Price), value);
     }
 
-    public ulong TokenAmount
+    public ulong Amount
     {
-        get => PersistentState.GetUInt64(nameof(TokenAmount));
-        private set => PersistentState.SetUInt64(nameof(TokenAmount), value);
+        get => PersistentState.GetUInt64(nameof(Amount));
+        private set => PersistentState.SetUInt64(nameof(Amount), value);
     }
 
     public Address Buyer
@@ -58,29 +57,24 @@ public class BuyOrder : SmartContract
         private set => PersistentState.SetBool(nameof(IsActive), value);
     }
 
-    /// <summary>
-    /// Method for sellers to call to transfer src tokens for crs.
-    /// </summary>
-    /// <param name="amountToSell">The amount of src tokens willing to sell.</param>
-    /// <returns><see cref="Transaction"/></returns>
     public Transaction Sell(ulong amountToSell)
     {
         Assert(IsActive, "Contract is not active.");
         Assert(Message.Sender != Buyer, "Sender is owner.");
 
-        amountToSell = TokenAmount >= amountToSell ? amountToSell : TokenAmount;
+        amountToSell = Amount >= amountToSell ? amountToSell : Amount;
 
-        var totalPrice = TokenPrice * amountToSell;
-        Assert(Balance >= totalPrice, "Not enough funds to cover purchase.");
+        var cost = Price * amountToSell;
+        Assert(Balance >= cost, "Not enough funds to cover purchase.");
 
-        var transferResult = Call(TokenAddress, 0, "TransferFrom", new object[] { Message.Sender, Buyer, amountToSell });
+        var transferResult = Call(Token, 0, "TransferFrom", new object[] { Message.Sender, Buyer, amountToSell });
         Assert((bool)transferResult.ReturnValue == true, "SRC transfer failure.");
 
-        Transfer(Message.Sender, totalPrice);
+        Transfer(Message.Sender, cost);
 
-        TokenAmount -= amountToSell;
+        Amount -= amountToSell;
 
-        if (TokenAmount == 0)
+        if (Amount == 0)
         {
             CloseOrderExecute();
         }
@@ -88,9 +82,9 @@ public class BuyOrder : SmartContract
         var txResult = new Transaction
         {
             Seller = Message.Sender,
-            TokenPrice = TokenPrice,
-            TokenAmount = amountToSell,
-            TotalPrice = totalPrice,
+            Price = Price,
+            Amount = amountToSell,
+            TotalPrice = cost,
             Block = Block.Number
         };
 
@@ -120,9 +114,10 @@ public class BuyOrder : SmartContract
     {
         return new OrderDetails
         {
-            TokenAddress = TokenAddress,
-            TokenPrice = TokenPrice,
-            TokenAmount = TokenAmount,
+            Buyer = Buyer,
+            Token = Token,
+            Price = Price,
+            Amount = Amount,
             ContractBalance = Balance,
             OrderType = nameof(BuyOrder),
             IsActive = IsActive,
@@ -134,9 +129,9 @@ public class BuyOrder : SmartContract
         [Index]
         public Address Seller;
 
-        public ulong TokenPrice;
+        public ulong Price;
 
-        public ulong TokenAmount;
+        public ulong Amount;
 
         public ulong TotalPrice;
 
@@ -145,16 +140,18 @@ public class BuyOrder : SmartContract
 
     public struct OrderDetails
     {
-        public Address TokenAddress;
+        public Address Buyer;
 
-        public ulong TokenPrice;
+        public Address Token;
 
-        public ulong TokenAmount;
+        public ulong Price;
 
-        public ulong ContractBalance;
+        public ulong Amount;
 
         public string OrderType;
 
         public bool IsActive;
+
+        public ulong ContractBalance;
     }
 }

@@ -15,11 +15,14 @@ namespace CirrusSwap.Tests
         private readonly Address Buyer;
         private readonly Address SellerOne;
         private readonly Address SellerTwo;
-        private readonly Address TokenAddress;
+        private readonly Address Token;
         private readonly Address ContractAddress;
-        private readonly ulong TokenAmount;
-        private readonly ulong TokenPrice;
+        private readonly ulong Amount;
+        private readonly ulong Price;
         private readonly bool IsActive;
+        private const ulong DefaultAmount = 10;
+        private const ulong DefaultPrice = 10_000_000;
+        private const ulong DefaultValue = 100_000_000;
 
         public BuyOrderTests()
         {
@@ -33,7 +36,7 @@ namespace CirrusSwap.Tests
             Buyer = "0x0000000000000000000000000000000000000001".HexToAddress();
             SellerOne = "0x0000000000000000000000000000000000000002".HexToAddress();
             SellerTwo = "0x0000000000000000000000000000000000000003".HexToAddress();
-            TokenAddress = "0x0000000000000000000000000000000000000004".HexToAddress();
+            Token = "0x0000000000000000000000000000000000000004".HexToAddress();
             ContractAddress = "0x0000000000000000000000000000000000000005".HexToAddress();
         }
 
@@ -43,63 +46,61 @@ namespace CirrusSwap.Tests
             MockContractState.Setup(x => x.GetBalance).Returns(() => value);
             MockContractState.Setup(x => x.Block.Number).Returns(12345);
             MockPersistentState.Setup(x => x.GetAddress(nameof(Buyer))).Returns(Buyer);
-            MockPersistentState.Setup(x => x.GetAddress(nameof(TokenAddress))).Returns(TokenAddress);
-            MockPersistentState.Setup(x => x.GetUInt64(nameof(TokenAmount))).Returns(amount);
-            MockPersistentState.Setup(x => x.GetUInt64(nameof(TokenPrice))).Returns(price);
+            MockPersistentState.Setup(x => x.GetAddress(nameof(Token))).Returns(Token);
+            MockPersistentState.Setup(x => x.GetUInt64(nameof(Price))).Returns(price);
+            MockPersistentState.Setup(x => x.GetUInt64(nameof(Amount))).Returns(amount);
             MockPersistentState.Setup(x => x.GetBool(nameof(IsActive))).Returns(true);
 
-            return new BuyOrder(MockContractState.Object, TokenAddress, price, amount);
+            return new BuyOrder(MockContractState.Object, Token, price, amount);
         }
 
-        [Theory]
-        [InlineData(500_000_000, 10_000_000, 50)]
-        [InlineData(50_000_000, 10_000_000, 5)]
-        public void Creates_New_Order(ulong value, ulong price, ulong amount)
+        [Fact]
+        public void Creates_New_BuyOrder()
         {
-            var order =NewBuyOrder(Buyer, value, price, amount);
+            var order = NewBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
 
             MockPersistentState.Verify(x => x.SetAddress(nameof(Buyer), Buyer), Times.Once);
             Assert.Equal(Buyer, order.Buyer);
             
-            MockPersistentState.Verify(x => x.SetAddress(nameof(TokenAddress), TokenAddress), Times.Once);
-            Assert.Equal(TokenAddress, order.TokenAddress);
+            MockPersistentState.Verify(x => x.SetAddress(nameof(Token), Token), Times.Once);
+            Assert.Equal(Token, order.Token);
 
-            MockPersistentState.Verify(x => x.SetUInt64(nameof(TokenPrice), price), Times.Once);
-            Assert.Equal(price, order.TokenPrice);
+            MockPersistentState.Verify(x => x.SetUInt64(nameof(Price), DefaultPrice), Times.Once);
+            Assert.Equal(DefaultPrice, order.Price);
 
-            MockPersistentState.Verify(x => x.SetUInt64(nameof(TokenAmount), amount), Times.Once);
-            Assert.Equal(amount, order.TokenAmount);
+            MockPersistentState.Verify(x => x.SetUInt64(nameof(Amount), DefaultAmount), Times.Once);
+            Assert.Equal(DefaultAmount, order.Amount);
 
             MockPersistentState.Verify(x => x.SetBool(nameof(IsActive), true), Times.Once);
             Assert.Equal(true, order.IsActive);
         }
 
         [Theory]
-        [InlineData(49_999_999, 10_000_000, 5)]
-        [InlineData(0, 10_000_000, 50)]
-        [InlineData(5_000_000_000, 0, 50)]
-        [InlineData(5_000_000_000, 10_000_000, 0)]
+        [InlineData(DefaultValue - 1, DefaultPrice, DefaultAmount)]
+        [InlineData(0, DefaultPrice, DefaultAmount)]
+        [InlineData(DefaultValue, 0, DefaultAmount)]
+        [InlineData(DefaultValue, DefaultPrice, 0)]
         public void Create_NewOrder_Fails_Invalid_Parameters(ulong value, ulong price, ulong amount)
         {
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, Buyer, value));
 
-            Assert.ThrowsAny<SmartContractAssertException>(() => new BuyOrder(MockContractState.Object, TokenAddress, amount, price));
+            Assert.ThrowsAny<SmartContractAssertException>(() => new BuyOrder(MockContractState.Object, Token, amount, price));
         }
 
         [Fact]
         public void Success_GetOrderDetails()
         {
-            ulong value = 500_000_000;
-            ulong price = 10_000_000;
-            ulong amount = 50;
-            var order =NewBuyOrder(Buyer, value, price, amount);
+            var order = NewBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
+
             var actualOrderDetails = order.GetOrderDetails();
+
             var expectedOrderDetails = new OrderDetails
             {
-                TokenAddress = TokenAddress,
-                TokenPrice = price,
-                TokenAmount = amount,
-                ContractBalance = value,
+                Buyer = Buyer,
+                Token = Token,
+                Price = DefaultPrice,
+                Amount = DefaultAmount,
+                ContractBalance = DefaultValue,
                 OrderType = nameof(BuyOrder),
                 IsActive = true
             };
@@ -109,173 +110,200 @@ namespace CirrusSwap.Tests
 
         #region Close Order
         [Fact]
-        public void CloseOrder_Failure_If_Sender_IsNot_Owner()
+        public void CloseOrder_Fails_Sender_IsNot_Owner()
         {
-            var order =NewBuyOrder(Buyer, 1, 1, 1);
+            var order = NewBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
 
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, SellerOne, 0));
 
-            Assert.ThrowsAny<SmartContractAssertException>(() => order.CloseOrder());
+            Assert.ThrowsAny<SmartContractAssertException>(order.CloseOrder);
         }
 
         [Fact]
-        public void CloseOrder_Success_Sender_Is_Owner()
+        public void CloseOrder_Success_Refunds_Balance()
         {
-            var order =NewBuyOrder(Buyer, 1, 1, 1);
+            var order = NewBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
 
             order.CloseOrder();
 
             MockContractState.Verify(x => x.GetBalance, Times.AtLeastOnce);
+
+            MockInternalExecutor.Verify(x => x.Transfer(It.IsAny<ISmartContractState>(), Buyer, DefaultValue), Times.Once);
+
             MockPersistentState.Verify(x => x.SetBool(nameof(IsActive), false), Times.Once);
+
             MockPersistentState.Verify(x => x.GetAddress(nameof(Buyer)), Times.AtLeastOnce);
-
-            MockContractState.Setup(x => x.GetBalance).Returns(() => 0);
-            MockPersistentState.Setup(x => x.GetBool(nameof(IsActive))).Returns(false);
-
-            Assert.Equal((ulong)0, order.Balance);
-            Assert.Equal(false, order.IsActive);
         }
         #endregion
 
-        #region Sale Method
+        #region Sell Method
         [Fact]
-        public void SellMethod_Fails_IfContract_IsNotActive()
+        public void Sell_Fails_IfContract_IsNotActive()
         {
-            var order =NewBuyOrder(Buyer, 1, 1, 1);
+            var order = NewBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
 
             MockPersistentState.Setup(x => x.GetBool(nameof(IsActive))).Returns(false);
-            MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, SellerOne, 1));
-
-            Assert.Equal(false, order.IsActive);
-            Assert.ThrowsAny<SmartContractAssertException>(() => order.Sell(1));
-        }
-
-        [Fact]
-        public void SellMethod_Fails_If_Sender_IsBuyer()
-        {
-            var order =NewBuyOrder(Buyer, 1, 1, 1);
-
-            MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, Buyer, 0));
-
-            Assert.Equal(Buyer, order.Buyer);
-            Assert.ThrowsAny<SmartContractAssertException>(() => order.Sell(1));
-        }
-
-        [Fact]
-        public void SellMethod_Fails_If_TotalPrice_IsLessThan_ContractBalance()
-        {
-            var order =NewBuyOrder(Buyer, 1, 1, 1);
-
-            MockContractState.Setup(x => x.GetBalance).Returns(() => 0);
-            MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, SellerOne, 0));
-
-            ulong totalPrice = 1;
-
-            Assert.True(order.Balance < totalPrice);
-            Assert.ThrowsAny<SmartContractAssertException>(() => order.Sell(1));
-        }
-
-        [Fact]
-        public void SellMethod_Fails_If_SrcTransfer_Fails()
-        {
-            var order =NewBuyOrder(Buyer, 1, 1, 1);
-            ulong amountToPurchase = 1;
 
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, SellerOne, 0));
 
-            // Mock contract call
-            MockInternalExecutor.Setup(s =>
-                s.Call(
-                    It.IsAny<ISmartContractState>(),
-                    It.IsAny<Address>(),
-                    It.IsAny<ulong>(),
-                    "TransferFrom",
-                    It.IsAny<object[]>(),
-                    It.IsAny<ulong>()))
-                .Returns(TransferResult.Transferred(false));
+            Assert.ThrowsAny<SmartContractAssertException>(() => order.Sell(DefaultAmount));
 
-            Assert.ThrowsAny<SmartContractAssertException>(() => order.Sell(amountToPurchase));
+            var expectedCallParams = new object[] { SellerOne, Buyer, DefaultAmount };
 
-            MockContractState.Verify(x => x.InternalTransactionExecutor
-                .Transfer(It.IsAny<ISmartContractState>(), It.IsAny<Address>(), It.IsAny<ulong>()), Times.Never);
+            MockInternalExecutor.Verify(x =>
+                x.Call(It.IsAny<ISmartContractState>(), Token, 0, "TransferFrom", expectedCallParams, 0), Times.Never);
+
+            MockInternalExecutor.Verify(x => x.Transfer(It.IsAny<ISmartContractState>(), SellerOne, DefaultValue), Times.Never);
 
             MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<Transaction>()), Times.Never);
 
+            MockPersistentState.Verify(x => x.SetUInt64(nameof(Amount), 0), Times.Never);
+
+            MockPersistentState.Verify(x => x.SetBool(nameof(IsActive), false), Times.Never);
         }
 
         [Fact]
-        public void SellMethod_Success_Has_Remaining_SrcTokenAmount()
+        public void Sell_Fails_If_Sender_IsBuyer()
         {
-            ulong tokenAmount = 4;
-            var order = NewBuyOrder(Buyer, 45, 10, tokenAmount);
+            var order = NewBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
+
+            MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, Buyer, 0));
+
+            Assert.ThrowsAny<SmartContractAssertException>(() => order.Sell(DefaultAmount));
+
+            var expectedCallParams = new object[] { SellerOne, Buyer, DefaultAmount };
+
+            MockInternalExecutor.Verify(x =>
+                x.Call(It.IsAny<ISmartContractState>(), Token, 0, "TransferFrom", expectedCallParams, 0), Times.Never);
+
+            MockInternalExecutor.Verify(x => x.Transfer(It.IsAny<ISmartContractState>(), SellerOne, DefaultValue), Times.Never);
+
+            MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<Transaction>()), Times.Never);
+
+            MockPersistentState.Verify(x => x.SetUInt64(nameof(Amount), 0), Times.Never);
+
+            MockPersistentState.Verify(x => x.SetBool(nameof(IsActive), false), Times.Never);
+        }
+
+        [Fact]
+        public void Sell_Fails_If_TotalPrice_IsLessThan_ContractBalance()
+        {
+            var order = NewBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
+
+            MockContractState.Setup(x => x.GetBalance).Returns(() => 0);
 
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, SellerOne, 0));
-            ulong amountToPurchase = 2;
-            ulong expectedNewTokenAmount = 2;
-            ulong orderCost = amountToPurchase * order.TokenPrice;
-            ulong updatedContractBalance = order.Balance - orderCost;
 
-            // Mock contract call
-            MockInternalExecutor.Setup(s =>
-                s.Call(
-                    It.IsAny<ISmartContractState>(),
-                    It.IsAny<Address>(),
-                    It.IsAny<ulong>(),
-                    "TransferFrom",
-                    It.IsAny<object[]>(),
-                    It.IsAny<ulong>()))
+            Assert.ThrowsAny<SmartContractAssertException>(() => order.Sell(DefaultAmount));
+
+            var expectedCallParams = new object[] { SellerOne, Buyer, DefaultAmount };
+
+            MockInternalExecutor.Verify(x =>
+                x.Call(It.IsAny<ISmartContractState>(), Token, 0, "TransferFrom", expectedCallParams, 0), Times.Never);
+
+            MockInternalExecutor.Verify(x => x.Transfer(It.IsAny<ISmartContractState>(), SellerOne, DefaultValue), Times.Never);
+
+            MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<Transaction>()), Times.Never);
+
+            MockPersistentState.Verify(x => x.SetUInt64(nameof(Amount), 0), Times.Never);
+
+            MockPersistentState.Verify(x => x.SetBool(nameof(IsActive), false), Times.Never);
+        }
+
+        [Fact]
+        public void Sell_Fails_If_SrcTransfer_Fails()
+        {
+            var order = NewBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
+
+            MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, SellerOne, 0));
+
+            var expectedCallParams = new object[] { SellerOne, Buyer, DefaultAmount };
+
+            MockInternalExecutor.Setup(x =>
+                x.Call(It.IsAny<ISmartContractState>(), Token, 0, "TransferFrom", expectedCallParams, 0))
+                .Returns(TransferResult.Transferred(false));
+
+            Assert.ThrowsAny<SmartContractAssertException>(() => order.Sell(DefaultAmount));
+
+            MockInternalExecutor.Verify(x =>
+                x.Call(It.IsAny<ISmartContractState>(), Token, 0, "TransferFrom", expectedCallParams, 0), Times.Once);
+
+            MockInternalExecutor.Verify(x => x.Transfer(It.IsAny<ISmartContractState>(), SellerOne, DefaultValue), Times.Never);
+
+            MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<Transaction>()), Times.Never);
+
+            MockPersistentState.Verify(x => x.SetUInt64(nameof(Amount), 0), Times.Never);
+
+            MockPersistentState.Verify(x => x.SetBool(nameof(IsActive), false), Times.Never);
+        }
+
+        [Fact]
+        public void Sell_Success_Until_Amount_IsGone()
+        {
+            var order = NewBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
+
+            // First Seller
+            ulong amountToSell = DefaultAmount - 5;
+            ulong expectedUpdatedAmount = DefaultAmount - amountToSell;
+            ulong orderCost = amountToSell * DefaultPrice;
+
+            MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, SellerOne, 0));
+
+            var expectedCallParams = new object[] { SellerOne, Buyer, amountToSell };
+
+            MockInternalExecutor.Setup(x =>
+                x.Call(It.IsAny<ISmartContractState>(), Token, 0, "TransferFrom", expectedCallParams, 0))
                 .Returns(TransferResult.Transferred(true));
 
-            MockInternalExecutor.Setup(x => x.Transfer(It.IsAny<ISmartContractState>(), It.IsAny<Address>(), It.IsAny<ulong>()))
-                .Callback(() => MockContractState.Setup(x => x.GetBalance).Returns(() => updatedContractBalance));
+            // Transfers CRS to seller, callback to update the contracts balance
+            MockInternalExecutor.Setup(x => x.Transfer(It.IsAny<ISmartContractState>(), SellerOne, orderCost))
+                .Callback(() => MockContractState.Setup(x => x.GetBalance).Returns(() => DefaultValue - orderCost));
 
-            MockPersistentState.Setup(x => x.SetUInt64(nameof(TokenAmount), expectedNewTokenAmount))
-                .Callback(() => MockPersistentState.Setup(x => x.GetUInt64(nameof(TokenAmount))).Returns(expectedNewTokenAmount));
+            MockPersistentState.Setup(x => x.SetUInt64(nameof(Amount), expectedUpdatedAmount))
+                .Callback(() => MockPersistentState.Setup(x => x.GetUInt64(nameof(Amount))).Returns(expectedUpdatedAmount));
 
-            order.Sell(amountToPurchase);
+            order.Sell(amountToSell);
 
-            MockPersistentState.Verify(x => x.SetUInt64(nameof(TokenAmount), expectedNewTokenAmount));
-
-            //ulong updatedTokenAmount = order.TokenAmount - amountToPurchase;
-            //MockPersistentState.Setup(x => x.GetUInt64(nameof(TokenAmount))).Returns(updatedTokenAmount);
+            MockInternalExecutor.Verify(x =>
+                x.Call(It.IsAny<ISmartContractState>(), Token, 0, "TransferFrom", expectedCallParams, 0), Times.Once);
 
             MockContractState.Verify(x => x.InternalTransactionExecutor
                 .Transfer(It.IsAny<ISmartContractState>(), SellerOne, orderCost), Times.Once);
 
+            MockPersistentState.Verify(x => x.SetUInt64(nameof(Amount), expectedUpdatedAmount));
+
             MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<Transaction>()), Times.Once);
 
-            // Second order
-            MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, SellerTwo, 0));
-            amountToPurchase = 2;
-            expectedNewTokenAmount = 0;
-            orderCost = amountToPurchase * order.TokenPrice;
 
-            // Mock contract call
-            MockInternalExecutor.Setup(s =>
-                s.Call(
-                    It.IsAny<ISmartContractState>(),
-                    It.IsAny<Address>(),
-                    It.IsAny<ulong>(),
-                    "TransferFrom",
-                    It.IsAny<object[]>(),
-                    It.IsAny<ulong>()))
+            // Second Seller
+            ulong secondAmountToSell = expectedUpdatedAmount;
+            ulong secondUpdatedAmount = secondAmountToSell - expectedUpdatedAmount;
+            ulong secondOrderCost = secondAmountToSell * DefaultPrice;
+
+            MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, SellerTwo, 0));
+
+            var secondExpectedCallParams = new object[] { SellerTwo, Buyer, secondAmountToSell };
+
+            MockInternalExecutor.Setup(x =>
+                x.Call(It.IsAny<ISmartContractState>(), Token, 0, "TransferFrom", secondExpectedCallParams, 0))
                 .Returns(TransferResult.Transferred(true));
 
-            MockPersistentState.Setup(x => x.SetUInt64(nameof(TokenAmount), expectedNewTokenAmount))
-                .Callback(() => MockPersistentState.Setup(x => x.GetUInt64(nameof(TokenAmount))).Returns(expectedNewTokenAmount));
+            MockPersistentState.Setup(x => x.SetUInt64(nameof(Amount), secondUpdatedAmount))
+                .Callback(() => MockPersistentState.Setup(x => x.GetUInt64(nameof(Amount))).Returns(secondUpdatedAmount));
 
-            order.Sell(amountToPurchase);
+            order.Sell(secondAmountToSell);
 
-            // Transfer the 2nd seller the amount of crs
+            MockInternalExecutor.Verify(x =>
+                x.Call(It.IsAny<ISmartContractState>(), Token, 0, "TransferFrom", secondExpectedCallParams, 0), Times.Once);
+
             MockContractState.Verify(x => x.InternalTransactionExecutor
-                .Transfer(It.IsAny<ISmartContractState>(), SellerTwo, orderCost), Times.Once);
+                .Transfer(It.IsAny<ISmartContractState>(), SellerTwo, secondOrderCost), Times.Once);
 
-            MockPersistentState.Verify(x => x.SetUInt64(nameof(TokenAmount), expectedNewTokenAmount));
+            MockPersistentState.Verify(x => x.SetUInt64(nameof(Amount), secondUpdatedAmount));
 
             // Shouldn't have enough balance to continue, close contract
             MockPersistentState.Verify(x => x.SetBool(nameof(IsActive), false), Times.Once);
 
-            // Return any balance to the buyer/owner
             MockContractState.Verify(x => x.InternalTransactionExecutor
                 .Transfer(It.IsAny<ISmartContractState>(), Buyer, order.Balance), Times.Once);
 
@@ -283,46 +311,46 @@ namespace CirrusSwap.Tests
         }
 
         [Theory]
-        [InlineData(25, 10, 2, 2)]
-        [InlineData(25, 10, 2, 3)]
-        public void SellMethod_Success_ClosesOrder_RemainingTokenAmount_IsZero(ulong value, ulong price, ulong amount, ulong amountToPurchase)
+        [InlineData(DefaultAmount)]
+        [InlineData(DefaultAmount + 1)]
+        public void Sell_Success_Remaining_Amount_IsZero_CloseOrder(ulong amountToSell)
         {
-            amountToPurchase = amount >= amountToPurchase ? amountToPurchase : amount;
+            amountToSell = DefaultAmount >= amountToSell ? amountToSell : DefaultAmount;
 
-            var order =NewBuyOrder(Buyer, value, price, amount);
-            ulong orderCost = amountToPurchase * price;
+            var order = NewBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
+
+            ulong orderCost = amountToSell * DefaultPrice;
             ulong updatedContractBalance = order.Balance - orderCost;
 
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, SellerOne, 0));
 
-            // Mock contract call
-            MockInternalExecutor.Setup(s =>
-                s.Call(
-                    It.IsAny<ISmartContractState>(),
-                    It.IsAny<Address>(),
-                    It.IsAny<ulong>(),
-                    "TransferFrom",
-                    It.IsAny<object[]>(),
-                    It.IsAny<ulong>()))
+            var expectedCallParams = new object[] { SellerOne, Buyer, amountToSell };
+
+            MockInternalExecutor.Setup(x =>
+                x.Call(It.IsAny<ISmartContractState>(), Token, 0, "TransferFrom", expectedCallParams, 0))
                 .Returns(TransferResult.Transferred(true));
 
             MockInternalExecutor.Setup(x => x.Transfer(It.IsAny<ISmartContractState>(), It.IsAny<Address>(), It.IsAny<ulong>()))
                 .Callback(() => MockContractState.Setup(x => x.GetBalance).Returns(() => updatedContractBalance));
 
-            MockPersistentState.Setup(x => x.SetUInt64(nameof(TokenAmount), amount - amountToPurchase))
-                .Callback(() => MockPersistentState.Setup(x => x.GetUInt64(nameof(TokenAmount))).Returns(amount - amountToPurchase));
+            MockPersistentState.Setup(x => x.SetUInt64(nameof(Amount), DefaultAmount - amountToSell))
+                .Callback(() => MockPersistentState.Setup(x => x.GetUInt64(nameof(Amount))).Returns(DefaultAmount - amountToSell));
 
-            order.Sell(amountToPurchase);
+            order.Sell(amountToSell);
+
+            MockInternalExecutor.Verify(x =>
+                x.Call(It.IsAny<ISmartContractState>(), Token, 0, "TransferFrom", expectedCallParams, 0), Times.Once);
 
             MockContractState.Verify(x => x.InternalTransactionExecutor
                 .Transfer(It.IsAny<ISmartContractState>(), SellerOne, orderCost), Times.Once);
 
-            MockPersistentState.Verify(x => x.SetUInt64(nameof(TokenAmount), 0), Times.Once);
+            MockPersistentState.Verify(x => x.SetUInt64(nameof(Amount), 0), Times.Once);
 
             MockPersistentState.Verify(x => x.SetBool(nameof(IsActive), false), Times.Once);
 
+            // Only runs on the second test if there is a balance to transfer
             MockContractState.Verify(x => x.InternalTransactionExecutor
-                .Transfer(It.IsAny<ISmartContractState>(), Buyer, order.Balance), Times.Once);
+                .Transfer(It.IsAny<ISmartContractState>(), Buyer, order.Balance), Times.AtMostOnce());
 
             MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<Transaction>()), Times.Once);
         }
