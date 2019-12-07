@@ -9,7 +9,7 @@ public class BuyOrder : SmartContract
     /// <param name="smartContractState">The execution state for the contract.</param>
     /// <param name="address">The address of the src token being bought.</param>
     /// <param name="price">The price for each src token.</param>
-    /// <param name="amount">The amount of the src token to buy.</param>
+    /// <param name="amount">The amount of src token to buy.</param>
     public BuyOrder(
         ISmartContractState smartContractState, 
         Address address,
@@ -120,7 +120,7 @@ public class BuyOrder : SmartContract
             Amount = Amount,
             ContractBalance = Balance,
             OrderType = nameof(BuyOrder),
-            IsActive = IsActive,
+            IsActive = IsActive
         };
     }
 

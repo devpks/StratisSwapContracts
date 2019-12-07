@@ -9,7 +9,7 @@ public class SellOrder : SmartContract
     /// <param name="smartContractState">The execution state for the contract.</param>
     /// <param name="token">The address of the src token being sold.</param>
     /// <param name="price">The price for each src token.</param>
-    /// <param name="amount">The amount of the src token to sell.</param>
+    /// <param name="amount">The amount of src token to sell.</param>
     public SellOrder(ISmartContractState smartContractState, Address token, ulong price, ulong amount)
         : base (smartContractState)
     {
@@ -111,7 +111,7 @@ public class SellOrder : SmartContract
             Price = Price,
             Amount = Amount,
             OrderType = nameof(SellOrder),
-            IsActive = IsActive,
+            IsActive = IsActive
         };
     }
 
