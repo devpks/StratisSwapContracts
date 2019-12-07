@@ -4,45 +4,41 @@ using Stratis.SmartContracts;
 public class SellOrder : SmartContract
 {
     /// <summary>
-    /// Simple sell order contract providing functionality to accept crs tokens from
-    /// buyers on a successful src transfer.
+    /// Constructor for a sell order setting the token, price, and amount to sell.
     /// </summary>
     /// <param name="smartContractState">The execution state for the contract.</param>
-    /// <param name="tokenAddress">The address of the src token being sold.</param>
-    /// <param name="tokenPrice">The price for each src token.</param>
-    /// <param name="tokenAmount">The amount of the src token to sell.</param>
-    public SellOrder(
-        ISmartContractState smartContractState, 
-        Address tokenAddress,
-        ulong tokenPrice,
-        ulong tokenAmount) : base (smartContractState)
+    /// <param name="token">The address of the src token being sold.</param>
+    /// <param name="price">The price for each src token.</param>
+    /// <param name="amount">The amount of the src token to sell.</param>
+    public SellOrder(ISmartContractState smartContractState, Address token, ulong price, ulong amount)
+        : base (smartContractState)
     {
-        Assert(tokenPrice > 0, "Price must be greater than 0");
-        Assert(tokenAmount > 0, "Amount must be greater than 0");
+        Assert(price > 0, "Price must be greater than 0");
+        Assert(amount > 0, "Amount must be greater than 0");
 
-        TokenAddress = tokenAddress;
-        TokenPrice = tokenPrice;
-        TokenAmount = tokenAmount;
+        Token = token;
+        Price = price;
+        Amount = amount;
         Seller = Message.Sender;
         IsActive = true;
     }
 
-    public Address TokenAddress
+    public Address Token
     {
-        get => PersistentState.GetAddress(nameof(TokenAddress));
-        private set => PersistentState.SetAddress(nameof(TokenAddress), value);
+        get => PersistentState.GetAddress(nameof(Token));
+        private set => PersistentState.SetAddress(nameof(Token), value);
     }
 
-    public ulong TokenPrice
+    public ulong Price
     {
-        get => PersistentState.GetUInt64(nameof(TokenPrice));
-        private set => PersistentState.SetUInt64(nameof(TokenPrice), value);
+        get => PersistentState.GetUInt64(nameof(Price));
+        private set => PersistentState.SetUInt64(nameof(Price), value);
     }
 
-    public ulong TokenAmount
+    public ulong Amount
     {
-        get => PersistentState.GetUInt64(nameof(TokenAmount));
-        private set => PersistentState.SetUInt64(nameof(TokenAmount), value);
+        get => PersistentState.GetUInt64(nameof(Amount));
+        private set => PersistentState.SetUInt64(nameof(Amount), value);
     }
 
     public Address Seller
@@ -57,30 +53,30 @@ public class SellOrder : SmartContract
         private set => PersistentState.SetBool(nameof(IsActive), value);
     }
 
-    public Transaction Buy(ulong amountToPurchase)
+    public Transaction Buy(ulong amountToBuy)
     {
         Assert(IsActive, "Contract is not active.");
         Assert(Message.Sender != Seller, "Sender is owner.");
 
-        amountToPurchase = TokenAmount >= amountToPurchase ? amountToPurchase : TokenAmount;
+        amountToBuy = Amount >= amountToBuy ? amountToBuy : Amount;
 
-        var totalPrice = TokenPrice * amountToPurchase;
-        Assert(Message.Value >= totalPrice, "Not enough funds to cover purchase.");
+        var cost = Price * amountToBuy;
+        Assert(Message.Value >= cost, "Not enough funds to cover purchase.");
 
-        var transferResult = Call(TokenAddress, 0, "TransferFrom", new object[] { Seller, Message.Sender, amountToPurchase });
+        var transferResult = Call(Token, 0, "TransferFrom", new object[] { Seller, Message.Sender, amountToBuy });
         Assert((bool)transferResult.ReturnValue == true, "SRC transfer failure.");
 
-        Transfer(Seller, totalPrice);
+        Transfer(Seller, cost);
 
-        var balance = Message.Value - totalPrice;
+        var balance = Message.Value - cost;
         if (balance > 0)
         {
             Transfer(Message.Sender, balance);
         }
 
-        TokenAmount -= amountToPurchase;
+        Amount -= amountToBuy;
 
-        if (TokenAmount == 0)
+        if (Amount == 0)
         {
             IsActive = false;
         }
@@ -88,9 +84,9 @@ public class SellOrder : SmartContract
         var txResult = new Transaction
         {
             Buyer = Message.Sender,
-            TokenPrice = TokenPrice,
-            TokenAmount = amountToPurchase,
-            TotalPrice = totalPrice,
+            Price = Price,
+            Amount = amountToBuy,
+            TotalPrice = cost,
             Block = Block.Number
         };
 
@@ -110,10 +106,10 @@ public class SellOrder : SmartContract
     {
         return new OrderDetails
         {
-            SellerAddress = Seller,
-            TokenAddress = TokenAddress,
-            TokenPrice = TokenPrice,
-            TokenAmount = TokenAmount,
+            Seller = Seller,
+            Token = Token,
+            Price = Price,
+            Amount = Amount,
             OrderType = nameof(SellOrder),
             IsActive = IsActive,
         };
@@ -124,9 +120,9 @@ public class SellOrder : SmartContract
         [Index]
         public Address Buyer;
 
-        public ulong TokenPrice;
+        public ulong Price;
 
-        public ulong TokenAmount;
+        public ulong Amount;
 
         public ulong TotalPrice;
 
@@ -135,13 +131,13 @@ public class SellOrder : SmartContract
 
     public struct OrderDetails
     {
-        public Address SellerAddress;
+        public Address Seller;
 
-        public Address TokenAddress;
+        public Address Token;
 
-        public ulong TokenPrice;
+        public ulong Price;
 
-        public ulong TokenAmount;
+        public ulong Amount;
 
         public string OrderType;
 
