@@ -8,7 +8,7 @@ Tyler is a software developer and is building a DApp. He doesn't want any part o
 
 _Note:_ Minifiy payload for cheaper gas costs.
 
-## Example JSON
+## JSON xample
 
 ```JSON
 {
@@ -20,6 +20,8 @@ _Note:_ Minifiy payload for cheaper gas costs.
 ```
 
 ## Creating the Contract
+
+Immediately the sender will be set as an Admin and the config paramter will be logged as the first update.
 
 ### Hash
 
@@ -36,3 +38,45 @@ a6633fafa8c1d16b88d88563b290443dd704d1b8018f6915b4c73c087081dbbd
 ### Parameters
 
 - `string config` - JSON payload to log (best if minified)
+
+## Managing Roles
+
+There are two possible roles, Admin and Contributor. The creator of the contract is an automatically Admin.
+
+### Admins
+
+- Can add or update other admins
+- Can add or update contributors
+- Can update the config
+
+### Contributors
+
+- Can only update the config
+
+### Updating Roles
+
+Call `UpdateAdmin` or `UpdateContributor` respectively, supplying the address to be updated and a boolean value representing authorization. (e.g. `UpdateAdmin(newAdmin, true)`) returns void. This will log the role update upon success.
+
+```JSON
+// Logged Role Result
+{
+  "admin": "address",
+  "updatedAddress": "address",
+  "action": "UpdateContributor",
+  "updatedValue": true,
+  "block": 12345
+}
+```
+
+## Updating Confgs
+
+Call `UpdateConfig` as an Admin or Contributor supplying the json payload as a minified string. (e.g. `UpdateConfig(jsonPayload)`) returns void. This will log the new config.
+
+```JSON
+// Logged JSON Config Result
+{
+  "Blame": "address",
+  "config": "{\"Json\",\"Config\"}",
+  "block": 12345
+}
+```

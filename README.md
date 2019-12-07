@@ -31,7 +31,7 @@ This contract will release SRC tokens to buyers after validations. After transfe
 
 A contract used to log new orders so users can find orders to fill without direct interaction. Orders are logged once, from the UI after creation and not called from within **BuyOrder** or **SellOrder** contracts.
 
-## Orders Use Case
+### Orders Use Case
 
 Johnny just made a **BuyOrder** and now has a contract address where users can sell him SRC tokens. He doesn't want to go search for sellers, so he sends his order details to the **Orders** contract. This will log his input and anyone can search the logs, for free, for orders to fill. If the seller is using CirrusSwapUI, this will make finding orders to fill easy.
 
