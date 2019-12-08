@@ -6,9 +6,9 @@ A contract used to log and feed the frontend small, non version specific JSON da
 
 Tyler is a software developer and is building a DApp. He doesn't want any part of his DApp to talk to a centralized API but he needs to be able to update data without forcing users to upgrade the frontend. Tyler creates a **JsonConfig** contract so he can update small JSON configuration payloads for the frontend to interpret.
 
-_Note:_ Minifiy payload for cheaper gas costs.
+_Note:_ Minifiy payload for lower gas costs.
 
-## JSON xample
+### Use Case Example
 
 ```JSON
 {
@@ -60,8 +60,8 @@ Call `UpdateAdmin` or `UpdateContributor` respectively, supplying the address to
 ```JSON
 // Logged Role Result
 {
-  "admin": "address",
-  "updatedAddress": "address",
+  "admin": "CNXp26iEE3EbJC9RRLBZ2cYnP7a8L3Z84F",
+  "updatedAddress": "CRWDdNei9teh3ancbEcBPMu4d3q575t7aK",
   "action": "UpdateContributor",
   "updatedValue": true,
   "block": 12345
@@ -75,7 +75,7 @@ Call `UpdateConfig` as an Admin or Contributor supplying the json payload as a m
 ```JSON
 // Logged JSON Config Result
 {
-  "Blame": "address",
+  "blame": "CRWDdNei9teh3ancbEcBPMu4d3q575t7aK",
   "config": "{\"Json\",\"Config\"}",
   "block": 12345
 }

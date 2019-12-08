@@ -1,29 +1,14 @@
 # Orders Contract
 
-A contract used to log new orders so users can find orders to fill without direct interaction. Orders are logged once, from the UI after creation and not called from within **BuyOrder** or **SellOrder** contracts.
+A contract used to log orders so users can find orders to fill without direct interaction with each other. Orders should be logged after they have been validated and have a new contract address. This is done manually so there can be different order books.
 
 ## Use Case
 
-Johnny just made a **BuyOrder** and now has a contract address where users can sell him SRC tokens. He doesn't want to go search for sellers, so he sends his order details to the **Orders** contract. This will log his input and anyone can search the logs, for free, for orders to fill. If the seller is using CirrusSwapUI, this will make finding orders to fill easy.
-
-## Example Struct
-
-```csharp
-public struct Order
-{
-  [Index]
-  public Address Owner;
-
-  [Index]
-  public Address TokenAddress;
-
-  public Address OrderAddress;
-
-  public ulong Block;
-}
-```
+Johnny just made a **BuyOrder** and now has a contract address where users can sell him SRC tokens. He doesn't want to go search for sellers, so he sends his order details to the **Orders** contract. This will log his input and anyone can search the logs for orders to fill.
 
 ## Creating the Contract
+
+Creating the contract just instantiates it, there is nothing else in the constructor.
 
 ### Hash
 
@@ -40,3 +25,17 @@ public struct Order
 ### Parameters
 
 None
+
+## Adding Orders
+
+Call `AddOrder` supplying the the token address the order is trading and the address of the order contrat.. (e.g. `AddOrder(tokenAddress, orderAddress)`) returns void. This will log the new order on success.
+
+```JSON
+// Logged Order Result
+{
+  "owner": "CNXp26iEE3EbJC9RRLBZ2cYnP7a8L3Z84F",
+  "token": "CRWDdNei9teh3ancbEcBPMu4d3q575t7aK",
+  "order": "CffkmA9Dy6s1Fsh3GJuBurDEpsVyZ6Loeq",
+  "block": 12345
+}
+```
