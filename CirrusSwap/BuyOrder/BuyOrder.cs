@@ -60,15 +60,15 @@ public class BuyOrder : SmartContract
     public Transaction Sell(ulong amountToSell)
     {
         Assert(IsActive, "Contract is not active.");
-        Assert(Message.Sender != Buyer, "Sender is owner.");
+        Assert(Message.Sender != Buyer, "Sender cannot be owner.");
 
         amountToSell = Amount >= amountToSell ? amountToSell : Amount;
 
         var cost = Price * amountToSell;
-        Assert(Balance >= cost, "Not enough funds to cover purchase.");
+        Assert(Balance >= cost, "Not enough funds to cover cost.");
 
         var transferResult = Call(Token, 0, "TransferFrom", new object[] { Message.Sender, Buyer, amountToSell });
-        Assert((bool)transferResult.ReturnValue == true, "SRC transfer failure.");
+        Assert((bool)transferResult.ReturnValue == true, "Transfer failure.");
 
         Transfer(Message.Sender, cost);
 
@@ -84,7 +84,7 @@ public class BuyOrder : SmartContract
             Seller = Message.Sender,
             Price = Price,
             Amount = amountToSell,
-            TotalPrice = cost,
+            Cost = cost,
             Block = Block.Number
         };
 
@@ -118,9 +118,9 @@ public class BuyOrder : SmartContract
             Token = Token,
             Price = Price,
             Amount = Amount,
-            ContractBalance = Balance,
+            IsActive = IsActive,
             OrderType = nameof(BuyOrder),
-            IsActive = IsActive
+            ContractBalance = Balance
         };
     }
 
@@ -133,7 +133,7 @@ public class BuyOrder : SmartContract
 
         public ulong Amount;
 
-        public ulong TotalPrice;
+        public ulong Cost;
 
         public ulong Block;
     }
