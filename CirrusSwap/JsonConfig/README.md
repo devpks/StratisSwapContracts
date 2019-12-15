@@ -12,10 +12,10 @@ _Note:_ Minifiy payload for lower gas costs.
 
 ```JSON
 {
-  "LatestUiVersion": "1.0.0",
-  "LatestUiDownload": "https://github.com/mrtpain/CirrusSwapUI/releases",
-  "OffersContractAddress": "Cam6mmCcCv4zZN65ppF28tHLhT2DfwuU26",
-  "FancyMessage": "December means Christmas!"
+  "latestUiVersion": "1.0.0",
+  "latestUiDownload": "https://github.com/mrtpain/CirrusSwapUI/releases",
+  "ordersContractAddress": "Cam6mmCcCv4zZN65ppF28tHLhT2DfwuU26",
+  "fancyMessage": "December means Christmas!"
 }
 ```
 

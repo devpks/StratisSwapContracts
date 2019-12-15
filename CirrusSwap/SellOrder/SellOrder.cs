@@ -86,7 +86,6 @@ public class SellOrder : SmartContract
             Buyer = Message.Sender,
             Price = Price,
             Amount = amountToBuy,
-            Cost = cost,
             Block = Block.Number
         };
 
@@ -123,8 +122,6 @@ public class SellOrder : SmartContract
         public ulong Price;
 
         public ulong Amount;
-
-        public ulong Cost;
 
         public ulong Block;
     }

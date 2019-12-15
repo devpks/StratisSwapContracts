@@ -1,6 +1,6 @@
 # Cirrus Swap
 
-Cirrus Swap is a set of four contracts contracts working together with a UI to create a decentralized exchange on the Cirrus Sidechain for Stratis.
+Cirrus Swap is a set of four contracts contracts working together with a UI to create a decentralized exchange on the Cirrus Sidechain of Stratis.
 
 1. [BuyOrder Contract](#buy-order-contract)
 2. [SellOrder Contract](#sell-order-contract)
@@ -13,7 +13,7 @@ A contract used to secure CRS and release after successful transfers of requeste
 
 ### Buy Order Use Case
 
-Johnny wants to buy 10 SRC tokens at .1 CRS each. Johnny creates a new **BuyOrder** contract specifying the token address he wants to buy, how many and at what price (in satoshis). The contract will validate Johnny's inputs and also ensure that he sent enough CRS tokens to cover the buy order. The contract will hold the CRS tokens until the order is filled or Johnny cancels the contract.
+Johnny wants to buy 10 SRC tokens at .1 CRS each. Johnny creates a new **BuyOrder** contract specifying the token address he wants to buy, at what price (in satoshis) and how many. The contract will hold the CRS tokens until the order is filled by a seller or Johnny cancels the contract. This contract will release CRS tokens to sellers after validations and successful transfers of SRC.
 
 ## [Sell Order Contract](./CirrusSwap/SellOrder)
 
@@ -21,34 +21,28 @@ A contract used to request a specific amount of an SRC token at a specifed price
 
 ### Sell Order Use Case
 
-Johnny wants to sell 10 SRC tokens at .1 CRS each. Johnny creates a new **SellOrder** contract specifying the token address he wants to sell, how many and at what price (in satoshis). The contract will validate Johnny's inputs and be created.
+Johnny wants to sell 10 SRC tokens at .1 CRS each. Johnny creates a new **SellOrder** contract specifying the token address he wants to sell, at what price (in satoshis) and how many. The contract will validate Johnny's inputs and be created.
 
-After the contract is created, Johnny must call the `Approve` method on the token's contract that he wants to sell and _Approve_ the new order's contract address to spend at least the amount that he is ordering to sell. If Johnny is using CirrusSwapUI, this will do it for him but comes with a cost of the extra calls gas price.
+After the contract is created, Johnny must call the `Approve` method on the token's contract that he wants to sell and _Approve_ the new order's contract address to spend at least the amount that he wants to sell.
 
-This contract will release SRC tokens to buyers after validations. After transfer success of SRC, the contract will release CRS to the seller.
+This contract will release SRC tokens to buyers after validations. After successful transfers of SRC, the contract will release CRS to the seller.
 
 ## [Orders Contract](./CirrusSwap/Orders)
 
-A contract used to log new orders so users can find orders to fill without direct interaction. Orders are logged once, from the UI after creation and not called from within **BuyOrder** or **SellOrder** contracts.
+A contract used to log orders so users can find orders to fill without direct interaction with each other. Orders should be logged after they have been validated and have a new contract address. This is done manually so there can be different order books.
 
 ### Orders Use Case
 
-Johnny just made a **BuyOrder** and now has a contract address where users can sell him SRC tokens. He doesn't want to go search for sellers, so he sends his order details to the **Orders** contract. This will log his input and anyone can search the logs, for free, for orders to fill. If the seller is using CirrusSwapUI, this will make finding orders to fill easy.
+Johnny just made a **BuyOrder** and now has a contract address where users can sell him SRC tokens. He doesn't want to go search for sellers, so he sends his order details to the **Orders** contract. This will log his input and anyone can search the logs for orders to fill.
 
-### Example Struct
+#### Example Logged Order
 
-```csharp
-public struct Order
+```JSON
 {
-  [Index]
-  public Address Owner;
-
-  [Index]
-  public Address TokenAddress;
-  
-  public Address ContractAddress;
-
-  public ulong Block;
+  "owner": "CNXp26iEE3EbJC9RRLBZ2cYnP7a8L3Z84F",
+  "token": "CRWDdNei9teh3ancbEcBPMu4d3q575t7aK",
+  "order": "CffkmA9Dy6s1Fsh3GJuBurDEpsVyZ6Loeq",
+  "block": 12345
 }
 ```
 
@@ -62,13 +56,13 @@ Tyler is a software developer and is building a DApp. He doesn't want any part o
 
 _Note:_ Minifiy payload for cheaper gas costs.
 
-### Example JSON
+#### Example JSON Config
 
 ```JSON
 {
-  "LatestUiVersion": "1.0.0",
-  "LatestUiDownload": "https://github.com/mrtpain/CirrusSwapUI/releases",
-  "OrdersContractAddress": "Cam6mmCcCv4zZN65ppF28tHLhT2DfwuU26",
-  "FancyMessage": "December means Christmas!"
+  "latestUiVersion": "1.0.0",
+  "latestUiDownload": "https://github.com/mrtpain/CirrusSwapUI/releases",
+  "ordersContractAddress": "Cam6mmCcCv4zZN65ppF28tHLhT2DfwuU26",
+  "fancyMessage": "December means Christmas!"
 }
 ```
