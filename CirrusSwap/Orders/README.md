@@ -47,7 +47,7 @@ Call `UpdateOrder` supplying the the order contract address, the token address, 
 {
   "token": "CRWDdNei9teh3ancbEcBPMu4d3q575t7aK",
   "order": "CffkmA9Dy6s1Fsh3GJuBurDEpsVyZ6Loeq",
-  "orderTxHash": "ee345c8b55558760e49fe8706528c8f50a56a022280675094b6654c0abec4463"
+  "orderTxHash": "ee345c8b55558760e49fe8706528c8f50a56a022280675094b6654c0abec4463",
   "block": 12345
 }
 ```
