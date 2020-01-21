@@ -10,9 +10,9 @@ public class Orders : SmartContract
     public Orders(ISmartContractState smartContractState)
         : base(smartContractState) { }
 
-    public void AddOrder(Address token, Address order)
+    public void AddOrder(Address order, Address token)
     {
-        Assert(token != Address.Zero && order != Address.Zero);
+        Assert(order != Address.Zero && token != Address.Zero);
 
         Log(new OrderLog
         {
@@ -22,6 +22,35 @@ public class Orders : SmartContract
             Block = Block.Number
         });
     }
+
+    public void UpdateOrder(Address order, Address token, string orderTxHash)
+    {
+        Assert(order != Address.Zero
+            && token != Address.Zero
+            && !string.IsNullOrEmpty(orderTxHash));
+
+        Log(new UpdatedOrderLog
+        {
+            Token = token,
+            Order = order,
+            OrderTxHash = orderTxHash,
+            Block = Block.Number
+        });
+    }
+
+    public struct UpdatedOrderLog
+    {
+        [Index]
+        public Address Token;
+
+        [Index]
+        public Address Order;
+
+        public string OrderTxHash;
+
+        public ulong Block;
+    }
+
 
     public struct OrderLog
     {

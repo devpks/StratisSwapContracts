@@ -42,14 +42,14 @@ namespace CirrusSwap.Tests
         {
             var orders = CreateNewOrdersContract();
 
-            orders.AddOrder(Token, OrderContractAddress);
+            orders.AddOrder(OrderContractAddress, Token);
 
             var expectedLog = new OrderLog
             {
                 Owner = Sender,
                 Token = Token,
                 Order = OrderContractAddress,
-                Block = orders.Block.Number
+                Block = 12345
             };
 
             MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), expectedLog), Times.Once);
@@ -62,7 +62,7 @@ namespace CirrusSwap.Tests
             var orders = CreateNewOrdersContract();
 
             Assert.ThrowsAny<SmartContractAssertException>(()
-                => orders.AddOrder(token, OrderContractAddress));
+                => orders.AddOrder(OrderContractAddress, token));
 
             MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<OrderLog>()), Times.Never);
         }
@@ -74,9 +74,67 @@ namespace CirrusSwap.Tests
             var orders = CreateNewOrdersContract();
 
             Assert.ThrowsAny<SmartContractAssertException>(()
-                => orders.AddOrder(Token, orderContractAddress));
+                => orders.AddOrder(orderContractAddress, Token));
 
             MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<OrderLog>()), Times.Never);
+        }
+
+        [Fact]
+        public void Success_Logs_Updated_Order()
+        {
+            var orders = CreateNewOrdersContract();
+            var txHash = "ee345c8b55558760e49fe8706528c8f50a56a022280675094b6654c0abec4463";
+
+            orders.UpdateOrder(OrderContractAddress, Token, txHash);
+
+            var expectedLog = new UpdatedOrderLog
+            {
+                OrderTxHash = txHash,
+                Token = Token,
+                Order = OrderContractAddress,
+                Block = 12345
+            };
+
+            MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), expectedLog), Times.Once);
+        }
+
+        [Fact]
+        public void Failure_Log_Updated_Order_Invalid_Token()
+        {
+            var token = Address.Zero;
+            var orders = CreateNewOrdersContract();
+            var txHash = "ee345c8b55558760e49fe8706528c8f50a56a022280675094b6654c0abec4463";
+
+            Assert.ThrowsAny<SmartContractAssertException>(()
+                => orders.UpdateOrder(OrderContractAddress, token, txHash));
+
+            MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<UpdatedOrderLog>()), Times.Never);
+        }
+
+        [Fact]
+        public void Failure_Log_Updated_Order_Invalid_OrderContractAddress()
+        {
+            var orderContractAddress = Address.Zero;
+            var orders = CreateNewOrdersContract();
+            var txHash = "ee345c8b55558760e49fe8706528c8f50a56a022280675094b6654c0abec4463";
+
+            Assert.ThrowsAny<SmartContractAssertException>(()
+                => orders.UpdateOrder(orderContractAddress, Token, txHash));
+
+            MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<UpdatedOrderLog>()), Times.Never);
+        }
+
+        [Fact]
+        public void Failure_Log_Updated_Order_Invalid_OrderTxHash()
+        {
+            var orderContractAddress = Address.Zero;
+            var orders = CreateNewOrdersContract();
+            var txHash = "";
+
+            Assert.ThrowsAny<SmartContractAssertException>(()
+                => orders.UpdateOrder(orderContractAddress, Token, txHash));
+
+            MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<UpdatedOrderLog>()), Times.Never);
         }
     }
 }
