@@ -73,7 +73,7 @@ namespace CirrusSwap.Tests
 
             var expectedRoleLog = new RoleLog
             {
-                Admin = contract.Message.Sender,
+                Blame = contract.Message.Sender,
                 UpdatedAddress = newAdminAddress,
                 UpdatedValue = approval,
                 Action = nameof(JsonConfig.UpdateAdmin),
@@ -98,7 +98,7 @@ namespace CirrusSwap.Tests
 
             var expectedRoleLog = new RoleLog
             {
-                Admin = Unauthorized,
+                Blame = Unauthorized,
                 UpdatedAddress = newAdminAddress,
                 Action = nameof(contract.UpdateAdmin),
                 UpdatedValue = approval,
@@ -124,7 +124,7 @@ namespace CirrusSwap.Tests
 
             var expectedRoleLog = new RoleLog
             {
-                Admin = contract.Message.Sender,
+                Blame = contract.Message.Sender,
                 UpdatedAddress = newContributorAddress,
                 UpdatedValue = approval,
                 Action = nameof(JsonConfig.UpdateContributor),
@@ -149,7 +149,7 @@ namespace CirrusSwap.Tests
 
             var expectedRoleLog = new RoleLog
             {
-                Admin = Unauthorized,
+                Blame = Unauthorized,
                 UpdatedAddress = newContributorAddress,
                 Action = nameof(contract.UpdateContributor),
                 UpdatedValue = approval,

@@ -41,7 +41,7 @@ public class JsonConfig : SmartContract
 
         Log(new RoleLog
         {
-            Admin = Message.Sender,
+            Blame = Message.Sender,
             UpdatedAddress = address,
             UpdatedValue = value,
             Action = nameof(UpdateAdmin),
@@ -57,7 +57,7 @@ public class JsonConfig : SmartContract
 
         Log(new RoleLog
         {
-            Admin = Message.Sender,
+            Blame = Message.Sender,
             UpdatedAddress = address,
             UpdatedValue = value,
             Action = nameof(UpdateContributor),
@@ -86,7 +86,7 @@ public class JsonConfig : SmartContract
     public struct RoleLog
     {
         [Index]
-        public Address Admin;
+        public Address Blame;
 
         [Index]
         public Address UpdatedAddress;
