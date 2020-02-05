@@ -1,3 +1,4 @@
+using System;
 using Stratis.SmartContracts;
 
 [Deploy]
@@ -112,6 +113,21 @@ public class SellOrder : SmartContract
             IsActive = IsActive,
             OrderType = nameof(SellOrder)
         };
+    }
+
+    public ulong CalculateTotals(string amount, ulong price)
+    {
+        ulong delimiter = 10_000;
+
+        var numbers = amount.Split(".");
+
+        ulong.TryParse(numbers[0], out ulong bigNumber);
+        ulong.TryParse(numbers[1], out ulong smallNumber);
+
+        ulong bigNumberTotal = bigNumber * delimiter * price;
+        ulong smallNumberTotal = smallNumber * price;
+
+        return bigNumberTotal + smallNumberTotal;
     }
 
     public struct Transaction
