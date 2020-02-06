@@ -3,7 +3,6 @@ using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts;
 using Xunit;
 using static SellOrder;
-using Microsoft.CodeAnalysis.Operations;
 
 namespace CirrusSwap.Tests
 {
@@ -345,78 +344,6 @@ namespace CirrusSwap.Tests
             MockPersistentState.Verify(x => x.SetBool(nameof(IsActive), false), Times.Once);
 
             MockContractLogger.Verify(x => x.Log(It.IsAny<ISmartContractState>(), It.IsAny<Transaction>()), Times.Once);
-        }
-
-        [Theory]
-        [InlineData("1.0000", 10_000, 100_000_000)]
-        [InlineData("1.0000", 100_000, 1_000_000_000)]
-        [InlineData("1.0000", 1_000_000, 10_000_000_000)]
-        [InlineData("1.0000", 10_000_000, 100_000_000_000)]
-        [InlineData("1.0000", 100_000_000, 1_000_000_000_000)]
-        [InlineData("1234.5678", 23_450, 289_506_149_100)]
-        [InlineData("19484.7657", 1_000, 194_847_657_000)]
-        // 0.23 * 14.7656 = 0.3396088
-        [InlineData("0.0230", 147_656, 33_960_880)]
-        public void Correctly_Calculates_Totals(string amount, ulong price, ulong expectedCost)
-        {
-            var order = NewSellOrder(Seller, DefaultZeroValue, DefaultPrice, DefaultAmount);
-
-            Assert.Equal(expectedCost, order.CalculateTotals(amount, price));
-        }
-
-        [Theory]
-        // Minimum price 1 = .0001crs
-        [InlineData("1.0000", 10_000, 100_000_000)]
-        [InlineData("1.0000", 10_000, 100_000_000)]
-        [InlineData("1.0000", 100_000, 1_000_000_000)]
-        [InlineData("1.0000", 1_000_000, 10_000_000_000)]
-        [InlineData("1.0000", 10_000_000, 100_000_000_000)]
-        [InlineData("1.0000", 100_000_000, 1_000_000_000_000)]
-        [InlineData("1234.5678", 23_450, 289_506_149_100)]
-        [InlineData("19484.7657", 1_000, 194_847_657_000)]
-        // 0.23 * 14.7656 = 0.3396088
-        [InlineData("0.0230", 147_656, 33_960_880)] 
-        public void CanCalculate_Amount_FromString(string amount, ulong price, ulong expectedCost)
-        {
-            ulong delimiter = 10_000;
-
-            Assert.True(amount.Length >= 6);
-
-            var splitAmount = amount.Split(".");
-
-            ulong.TryParse(splitAmount[0], out ulong integer);
-            ulong.TryParse(splitAmount[1], out ulong fractional);
-
-            ulong integerTotal = integer * delimiter * price;
-            ulong fractionalTotal = fractional * price;
-
-            var cost = integerTotal + fractionalTotal;
-
-            Assert.Equal(expectedCost, cost);
-        }
-
-        [Theory]
-        [InlineData("1.00000001", 100_000_001, 100_000_000)]
-        [InlineData("1.0000001", 10_000_001, 10_000_000)]
-        [InlineData("1.000001", 1_000_001, 1_000_000)]
-        [InlineData("1.00001", 100_001, 100_000)]
-        [InlineData("1.0001", 10_001, 10_000)]
-        [InlineData("1.001", 1_001, 1_000)]
-        [InlineData("1.01", 101, 100)]
-        [InlineData("1.1", 11, 10)]
-        public void ParseDecimalStringToSatoshis(string amount, ulong expectedTotal, ulong delimiter)
-        {
-            var splitAmount = amount.Split(".");
-
-            ulong.TryParse(splitAmount[0], out ulong integer);
-            ulong.TryParse(splitAmount[1], out ulong fractional);
-
-            ulong integerTotal = integer * delimiter;
-            ulong fractionalTotal = fractional;
-
-            var total = integerTotal + fractionalTotal;
-
-            Assert.Equal(expectedTotal, total);
         }
 
         #endregion
