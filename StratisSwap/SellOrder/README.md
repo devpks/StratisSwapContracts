@@ -32,7 +32,7 @@ b76fe3ec16361fb743f84ac9fde7e3ec844e1c03bd84dff497433bb5d5bc6013
 
 ### Post Deployment
 
-After the contract is created the new contract address must be approved to spend the amount of SRC tokens specified in the `amount` parameter. Using Cirrus Swap UI, this will be done for you.
+After the contract is created the new contract address must be approved to spend the amount of SRC tokens specified in the `amount` parameter. Using Stratis Swap UI, this will be done for you.
 
 - Call the `Approve(Address newOrderContractAddress, ulong oldBalance, ulong amount)` method at the provided `address` of the SRC token to be orderd.
 

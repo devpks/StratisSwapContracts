@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CirrusSwap", "CirrusSwap\CirrusSwap.csproj", "{AED7C7C0-068E-4D54-94A4-5E7E519FE732}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StratisSwap", "CirrusSwap\StratisSwap.csproj", "{AED7C7C0-068E-4D54-94A4-5E7E519FE732}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CirrusSwap.Tests", "CirrusSwap.Tests\CirrusSwap.Tests.csproj", "{0D0EB5EC-5310-4E7A-9511-663D68B0389A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StratisSwap.Tests", "CirrusSwap.Tests\StratisSwap.Tests.csproj", "{0D0EB5EC-5310-4E7A-9511-663D68B0389A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

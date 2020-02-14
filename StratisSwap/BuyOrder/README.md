@@ -52,7 +52,7 @@ Prior to attempting to settle a contract, make a local call to `GetOrderDetails`
 
 ### Aproving SRC Tokens
 
-Prior to filling an order, the seller must approve the contract address to spend the amount of SRC tokens specified in the `amount` parameter. Using Cirrus Swap UI, this will be done for you.
+Prior to filling an order, the seller must approve the contract address to spend the amount of SRC tokens specified in the `amount` parameter. Using Stratis Swap UI, this will be done for you.
 
 - Call the `Approve(Address orderContractAddress, ulong oldBalance, ulong amount)` method at the provided `address` of the SRC token to be orderd.
 
