@@ -209,7 +209,9 @@ namespace CirrusSwap.Tests
 
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, BuyerOne, DefaultCostValue));
 
-            var expectedCallParams = new object[] { Seller, BuyerOne, DefaultAmount };
+            var amountInStratoshis = DefaultAmount * 100_000_000;
+            var expectedCallParams = new object[] { Seller, BuyerOne, amountInStratoshis };
+
             MockInternalExecutor.Setup(x =>
                 x.Call(It.IsAny<ISmartContractState>(), Token, 0, "TransferFrom", expectedCallParams, 0))
                 .Returns(TransferResult.Transferred(false));
@@ -240,7 +242,9 @@ namespace CirrusSwap.Tests
 
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, BuyerOne, orderCost));
 
-            var expectedCallParams = new object[] { Seller, BuyerOne, amountToBuy };
+            var amountInStratoshis = amountToBuy * 100_000_000;
+            var expectedCallParams = new object[] { Seller, BuyerOne, amountInStratoshis };
+
             MockInternalExecutor.Setup(x =>
                 x.Call(It.IsAny<ISmartContractState>(), Token, 0, "TransferFrom", expectedCallParams, 0))
                 .Returns(TransferResult.Transferred(true));
@@ -272,7 +276,8 @@ namespace CirrusSwap.Tests
 
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, BuyerTwo, secondOrderCost));
 
-            var secondExpectedCallParams = new object[] { Seller, BuyerTwo, secondAmountToBuy };
+            var secondAmountInStratoshis = secondAmountToBuy * 100_000_000;
+            var secondExpectedCallParams = new object[] { Seller, BuyerTwo, secondAmountInStratoshis };
 
             MockInternalExecutor.Setup(x =>
                 x.Call(It.IsAny<ISmartContractState>(), Token, 0, "TransferFrom", secondExpectedCallParams, 0))
@@ -312,7 +317,8 @@ namespace CirrusSwap.Tests
 
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, BuyerOne, orderCost));
 
-            var expectedCallParams = new object[] { Seller, BuyerOne, amountToBuy };
+            var amountInStratoshis = amountToBuy * 100_000_000;
+            var expectedCallParams = new object[] { Seller, BuyerOne, amountInStratoshis };
 
             MockInternalExecutor.Setup(x =>
                 x.Call(It.IsAny<ISmartContractState>(), Token, 0, "TransferFrom", expectedCallParams, 0))

@@ -67,7 +67,9 @@ public class BuyOrder : SmartContract
         var cost = Price * amountToSell;
         Assert(Balance >= cost, "Not enough funds to cover cost.");
 
-        var transferResult = Call(Token, 0, "TransferFrom", new object[] { Message.Sender, Buyer, amountToSell });
+        var amountInStratoshis = amountToSell * 100_000_000;
+
+        var transferResult = Call(Token, 0, "TransferFrom", new object[] { Message.Sender, Buyer, amountInStratoshis });
         Assert((bool)transferResult.ReturnValue == true, "Transfer failure.");
 
         Transfer(Message.Sender, cost);
