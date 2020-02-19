@@ -12,9 +12,9 @@
     <Compile Remove="ContractConfig.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="BuyOrder\" />
-    <Folder Include="SellOrder\" />
+    <Folder Include="SimpleBuyOrder\" />
+    <Folder Include="SimpleSellOrder\" />
     <Folder Include="JsonConfig\" />
-    <Folder Include="Orders\" />
+    <Folder Include="OrdersHistory\" />
   </ItemGroup>
 </Project>

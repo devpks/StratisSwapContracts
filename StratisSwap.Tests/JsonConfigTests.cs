@@ -4,7 +4,7 @@ using Stratis.SmartContracts;
 using Xunit;
 using static JsonConfig;
 
-namespace CirrusSwap.Tests
+namespace StratisSwap.Tests
 {
     public class JsonConfigTests
     {

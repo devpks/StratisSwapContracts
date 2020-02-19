@@ -2,11 +2,11 @@ using Moq;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts;
 using Xunit;
-using static BuyOrder;
+using static SimpleBuyOrder;
 
-namespace CirrusSwap.Tests
+namespace StratisSwap.Tests
 {
-    public class BuyOrderTests
+    public class SimpleBuyOrderTests
     {
         private readonly Mock<ISmartContractState> MockContractState;
         private readonly Mock<IPersistentState> MockPersistentState;
@@ -24,7 +24,7 @@ namespace CirrusSwap.Tests
         private const ulong DefaultPrice = 10_000_000;
         private const ulong DefaultValue = 100_000_000;
 
-        public BuyOrderTests()
+        public SimpleBuyOrderTests()
         {
             MockContractLogger = new Mock<IContractLogger>();
             MockPersistentState = new Mock<IPersistentState>();
@@ -40,7 +40,7 @@ namespace CirrusSwap.Tests
             ContractAddress = "0x0000000000000000000000000000000000000005".HexToAddress();
         }
 
-        private BuyOrder NewBuyOrder(Address sender, ulong value, ulong price, ulong amount)
+        private SimpleBuyOrder NewSimpleBuyOrder(Address sender, ulong value, ulong price, ulong amount)
         {
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, sender, value));
             MockContractState.Setup(x => x.GetBalance).Returns(() => value);
@@ -51,13 +51,13 @@ namespace CirrusSwap.Tests
             MockPersistentState.Setup(x => x.GetUInt64(nameof(Amount))).Returns(amount);
             MockPersistentState.Setup(x => x.GetBool(nameof(IsActive))).Returns(true);
 
-            return new BuyOrder(MockContractState.Object, Token, price, amount);
+            return new SimpleBuyOrder(MockContractState.Object, Token, price, amount);
         }
 
         [Fact]
-        public void Creates_New_BuyOrder()
+        public void Creates_New_SimpleBuyOrder()
         {
-            var order = NewBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
+            var order = NewSimpleBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
 
             MockPersistentState.Verify(x => x.SetAddress(nameof(Buyer), Buyer), Times.Once);
             Assert.Equal(Buyer, order.Buyer);
@@ -84,13 +84,13 @@ namespace CirrusSwap.Tests
         {
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, Buyer, value));
 
-            Assert.ThrowsAny<SmartContractAssertException>(() => new BuyOrder(MockContractState.Object, Token, amount, price));
+            Assert.ThrowsAny<SmartContractAssertException>(() => new SimpleBuyOrder(MockContractState.Object, Token, amount, price));
         }
 
         [Fact]
         public void Success_GetOrderDetails()
         {
-            var order = NewBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
+            var order = NewSimpleBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
 
             var actualOrderDetails = order.GetOrderDetails();
 
@@ -101,7 +101,7 @@ namespace CirrusSwap.Tests
                 Price = DefaultPrice,
                 Amount = DefaultAmount,
                 ContractBalance = DefaultValue,
-                OrderType = nameof(BuyOrder),
+                OrderType = nameof(SimpleBuyOrder),
                 IsActive = true
             };
 
@@ -112,7 +112,7 @@ namespace CirrusSwap.Tests
         [Fact]
         public void CloseOrder_Fails_Sender_IsNot_Owner()
         {
-            var order = NewBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
+            var order = NewSimpleBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
 
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, SellerOne, 0));
 
@@ -122,7 +122,7 @@ namespace CirrusSwap.Tests
         [Fact]
         public void CloseOrder_Success_Refunds_Balance()
         {
-            var order = NewBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
+            var order = NewSimpleBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
 
             order.CloseOrder();
 
@@ -140,7 +140,7 @@ namespace CirrusSwap.Tests
         [Fact]
         public void Sell_Fails_IfContract_IsNotActive()
         {
-            var order = NewBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
+            var order = NewSimpleBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
 
             MockPersistentState.Setup(x => x.GetBool(nameof(IsActive))).Returns(false);
 
@@ -165,7 +165,7 @@ namespace CirrusSwap.Tests
         [Fact]
         public void Sell_Fails_If_Sender_IsBuyer()
         {
-            var order = NewBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
+            var order = NewSimpleBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
 
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, Buyer, 0));
 
@@ -188,7 +188,7 @@ namespace CirrusSwap.Tests
         [Fact]
         public void Sell_Fails_If_TotalPrice_IsLessThan_ContractBalance()
         {
-            var order = NewBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
+            var order = NewSimpleBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
 
             MockContractState.Setup(x => x.GetBalance).Returns(() => 0);
 
@@ -213,7 +213,7 @@ namespace CirrusSwap.Tests
         [Fact]
         public void Sell_Fails_If_SrcTransfer_Fails()
         {
-            var order = NewBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
+            var order = NewSimpleBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
 
             MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, SellerOne, 0));
 
@@ -241,7 +241,7 @@ namespace CirrusSwap.Tests
         [Fact]
         public void Sell_Success_Until_Amount_IsGone()
         {
-            var order = NewBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
+            var order = NewSimpleBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
 
             // First Seller
             ulong amountToSell = DefaultAmount - 5;
@@ -320,7 +320,7 @@ namespace CirrusSwap.Tests
         {
             amountToSell = DefaultAmount >= amountToSell ? amountToSell : DefaultAmount;
 
-            var order = NewBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
+            var order = NewSimpleBuyOrder(Buyer, DefaultValue, DefaultPrice, DefaultAmount);
 
             ulong orderCost = amountToSell * DefaultPrice;
             ulong updatedContractBalance = order.Balance - orderCost;

@@ -1,4 +1,4 @@
-# Orders Contract
+# Orders History Contract
 
 A contract used to log orders so users can find orders to fill without direct interaction with each other. Orders should be logged after they have been validated and have a new contract address. This is done manually so there can be different order books.
 

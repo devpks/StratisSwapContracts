@@ -1,13 +1,13 @@
 ﻿using Stratis.SmartContracts;
 
 [Deploy]
-public class Orders : SmartContract
+public class OrdersHistory : SmartContract
 {
     /// <summary>
     /// Constructor for orders contract that logs general info specific to an order.
     /// </summary>
     /// <param name="smartContractState">The execution state for the contract.</param>
-    public Orders(ISmartContractState smartContractState)
+    public OrdersHistory(ISmartContractState smartContractState)
         : base(smartContractState) { }
 
     public void AddOrder(Address order, Address token)

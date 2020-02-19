@@ -1,25 +1,29 @@
 using Stratis.SmartContracts;
 
 [Deploy]
-public class SellOrder : SmartContract
+public class SimpleBuyOrder : SmartContract
 {
     /// <summary>
-    /// Constructor for a sell order setting the token, price, and amount to sell.
+    /// Constructor for a buy order setting the token, price, and amount to buy.
     /// </summary>
     /// <param name="smartContractState">The execution state for the contract.</param>
-    /// <param name="token">The address of the src token being sold.</param>
+    /// <param name="address">The address of the src token being bought.</param>
     /// <param name="price">The price for each src token.</param>
-    /// <param name="amount">The amount of src token to sell.</param>
-    public SellOrder(ISmartContractState smartContractState, Address token, ulong price, ulong amount)
-        : base (smartContractState)
+    /// <param name="amount">The amount of src token to buy.</param>
+    public SimpleBuyOrder(
+        ISmartContractState smartContractState, 
+        Address address,
+        ulong price,
+        ulong amount) : base (smartContractState)
     {
         Assert(price > 0, "Price must be greater than 0");
         Assert(amount > 0, "Amount must be greater than 0");
+        Assert(Message.Value >= amount * price, "Balance is not enough to cover cost");
 
-        Token = token;
+        Token = address;
         Price = price;
         Amount = amount;
-        Seller = Message.Sender;
+        Buyer = Message.Sender;
         IsActive = true;
     }
 
@@ -41,10 +45,10 @@ public class SellOrder : SmartContract
         private set => PersistentState.SetUInt64(nameof(Amount), value);
     }
 
-    public Address Seller
+    public Address Buyer
     {
-        get => PersistentState.GetAddress(nameof(Seller));
-        private set => PersistentState.SetAddress(nameof(Seller), value);
+        get => PersistentState.GetAddress(nameof(Buyer));
+        private set => PersistentState.SetAddress(nameof(Buyer), value);
     }
 
     public bool IsActive
@@ -53,41 +57,35 @@ public class SellOrder : SmartContract
         private set => PersistentState.SetBool(nameof(IsActive), value);
     }
 
-    public Transaction Buy(ulong amountToBuy)
+    public Transaction Sell(ulong amountToSell)
     {
         Assert(IsActive, "Contract is not active.");
-        Assert(Message.Sender != Seller, "Sender cannot be owner.");
+        Assert(Message.Sender != Buyer, "Sender cannot be owner.");
 
-        amountToBuy = Amount >= amountToBuy ? amountToBuy : Amount;
+        amountToSell = Amount >= amountToSell ? amountToSell : Amount;
 
-        var cost = Price * amountToBuy;
-        Assert(Message.Value >= cost, "Not enough funds to cover cost.");
+        var cost = Price * amountToSell;
+        Assert(Balance >= cost, "Not enough funds to cover cost.");
 
-        var amountInStratoshis = amountToBuy * 100_000_000;
+        var amountInStratoshis = amountToSell * 100_000_000;
+        var transferResult = Call(Token, 0, "TransferFrom", new object[] { Message.Sender, Buyer, amountInStratoshis });
 
-        var transferResult = Call(Token, 0, "TransferFrom", new object[] { Seller, Message.Sender, amountInStratoshis });
         Assert((bool)transferResult.ReturnValue == true, "Transfer failure.");
 
-        Transfer(Seller, cost);
+        Transfer(Message.Sender, cost);
 
-        var balance = Message.Value - cost;
-        if (balance > 0)
-        {
-            Transfer(Message.Sender, balance);
-        }
-
-        Amount -= amountToBuy;
+        Amount -= amountToSell;
 
         if (Amount == 0)
         {
-            IsActive = false;
+            CloseOrderExecute();
         }
 
         var txResult = new Transaction
         {
-            Buyer = Message.Sender,
+            Seller = Message.Sender,
             Price = Price,
-            Amount = amountToBuy,
+            Amount = amountToSell,
             Block = Block.Number
         };
 
@@ -98,7 +96,17 @@ public class SellOrder : SmartContract
 
     public void CloseOrder()
     {
-        Assert(Message.Sender == Seller);
+        Assert(Message.Sender == Buyer);
+
+        CloseOrderExecute();
+    }
+
+    private void CloseOrderExecute()
+    {
+        if (Balance > 0)
+        {
+            Transfer(Buyer, Balance);
+        }
 
         IsActive = false;
     }
@@ -107,19 +115,20 @@ public class SellOrder : SmartContract
     {
         return new OrderDetails
         {
-            Seller = Seller,
+            Buyer = Buyer,
             Token = Token,
             Price = Price,
             Amount = Amount,
             IsActive = IsActive,
-            OrderType = nameof(SellOrder)
+            OrderType = nameof(SimpleBuyOrder),
+            ContractBalance = Balance
         };
     }
 
     public struct Transaction
     {
         [Index]
-        public Address Buyer;
+        public Address Seller;
 
         public ulong Price;
 
@@ -130,7 +139,7 @@ public class SellOrder : SmartContract
 
     public struct OrderDetails
     {
-        public Address Seller;
+        public Address Buyer;
 
         public Address Token;
 
@@ -141,5 +150,7 @@ public class SellOrder : SmartContract
         public string OrderType;
 
         public bool IsActive;
+
+        public ulong ContractBalance;
     }
 }
