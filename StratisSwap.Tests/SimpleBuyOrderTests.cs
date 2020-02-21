@@ -100,7 +100,7 @@ namespace StratisSwap.Tests
                 Token = Token,
                 Price = DefaultPrice,
                 Amount = DefaultAmount,
-                ContractBalance = DefaultValue,
+                Balance = DefaultValue,
                 OrderType = nameof(SimpleBuyOrder),
                 IsActive = true
             };

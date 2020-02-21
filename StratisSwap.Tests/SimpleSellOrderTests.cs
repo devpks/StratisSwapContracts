@@ -91,6 +91,15 @@ namespace StratisSwap.Tests
         {
             var order = NewSimpleSellOrder(Seller, DefaultZeroValue, DefaultPrice, DefaultAmount);
 
+            MockContractState.Setup(x => x.Message).Returns(new Message(ContractAddress, BuyerOne, DefaultZeroValue));
+
+            var expectedBalance = DefaultAmount * 100_000_000;
+            var expectedCallParams = new object[] { Seller, ContractAddress };
+
+            MockInternalExecutor.Setup(x =>
+                x.Call(It.IsAny<ISmartContractState>(), Token, 0, "Allowance", expectedCallParams, 0))
+                .Returns(TransferResult.Transferred(expectedBalance));
+
             var actualOrderDetails = order.GetOrderDetails();
 
             var expectedOrderDetails = new OrderDetails
@@ -100,7 +109,8 @@ namespace StratisSwap.Tests
                 Price = DefaultPrice,
                 Amount = DefaultAmount,
                 OrderType = nameof(SimpleSellOrder),
-                IsActive = true
+                IsActive = true,
+                Balance = expectedBalance
             };
 
             Assert.Equal(expectedOrderDetails, actualOrderDetails);

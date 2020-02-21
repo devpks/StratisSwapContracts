@@ -1,27 +1,12 @@
-# JSON Config Contract
+# JSON Config
 
-A contract used to log and feed the frontend small, non version specific JSON data. This is helpful when wanting to have a dynamic UI without relying on a centralized API.
+A contract used to log small, JSON payloads.
 
-## Use Case
-
-Tyler is a software developer and is building a DApp. He doesn't want any part of his DApp to talk to a centralized API but he needs to be able to update data without forcing users to upgrade the frontend. Tyler creates a **JsonConfig** contract so he can update small JSON configuration payloads for the frontend to interpret.
-
-_Note:_ Minifiy payload for lower gas costs.
-
-### Use Case Example
-
-```JSON
-{
-  "latestUiVersion": "1.0.0",
-  "latestUiDownload": "https://github.com/mrtpain/CirrusSwapUI/releases",
-  "ordersContractAddress": "Cam6mmCcCv4zZN65ppF28tHLhT2DfwuU26",
-  "fancyMessage": "December means Christmas!"
-}
-```
+Allows for teams to have admins and contributors that can log new JSON payloads to the contract for decentralized applications to read from.
 
 ## Creating the Contract
 
-Immediately the sender will be set as an Admin and the config paramter will be logged as the first update.
+The contract creator will be set as an Admin and the config paramter will be logged as the first update.
 
 ### Hash
 
@@ -37,11 +22,11 @@ Immediately the sender will be set as an Admin and the config paramter will be l
 
 ### Parameters
 
-- `string config` - JSON payload to log (best if minified)
+- `string config` - JSON payload to log **(minify to save gas)**
 
 ## Managing Roles
 
-There are two possible roles, Admin and Contributor. The creator of the contract is an automatically Admin.
+There are two possible roles, Admin and Contributor. The creator of the contract is automatically made an Admin.
 
 ### Admins
 
@@ -57,8 +42,9 @@ There are two possible roles, Admin and Contributor. The creator of the contract
 
 Call `UpdateAdmin` or `UpdateContributor` respectively, supplying the address to be updated and a boolean value representing authorization. (e.g. `UpdateAdmin(newAdmin, true)`) returns void. This will log the role update upon success.
 
+_Logged Role Update_
+
 ```JSON
-// Logged Role Result
 {
   "blame": "CNXp26iEE3EbJC9RRLBZ2cYnP7a8L3Z84F",
   "updatedAddress": "CRWDdNei9teh3ancbEcBPMu4d3q575t7aK",
@@ -72,11 +58,16 @@ Call `UpdateAdmin` or `UpdateContributor` respectively, supplying the address to
 
 Call `UpdateConfig` as an Admin or Contributor supplying the json payload as a minified string. (e.g. `UpdateConfig(jsonPayload)`) returns void. This will log the new config.
 
+_Logged Config Update_
+
 ```JSON
-// Logged JSON Config Result
 {
   "blame": "CRWDdNei9teh3ancbEcBPMu4d3q575t7aK",
-  "config": "{\"Json\",\"Config\"}",
+  "config": "{\"Json\":\"Config\"}",
   "block": 12345
 }
 ```
+
+## Reading Configs
+
+Get logged configs by using the receipt-search endpoint on a Full Node with an event name of `ConfigLog`.

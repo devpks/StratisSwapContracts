@@ -8,8 +8,8 @@ public class SimpleSellOrder : SmartContract
     /// </summary>
     /// <param name="smartContractState">The execution state for the contract.</param>
     /// <param name="token">The address of the src token being sold.</param>
-    /// <param name="price">The price for each src token.</param>
-    /// <param name="amount">The amount of src token to sell.</param>
+    /// <param name="price">The price for each src token in stratoshis.</param>
+    /// <param name="amount">The amount of src token to sell in full.</param>
     public SimpleSellOrder(ISmartContractState smartContractState, Address token, ulong price, ulong amount)
         : base (smartContractState)
     {
@@ -23,36 +23,56 @@ public class SimpleSellOrder : SmartContract
         IsActive = true;
     }
 
+    /// <summary>
+    /// The contract address of the token being sold.
+    /// </summary>
     public Address Token
     {
         get => PersistentState.GetAddress(nameof(Token));
         private set => PersistentState.SetAddress(nameof(Token), value);
     }
 
+    /// <summary>
+    /// The price in stratoshis of each src token being sold.
+    /// </summary>
     public ulong Price
     {
         get => PersistentState.GetUInt64(nameof(Price));
         private set => PersistentState.SetUInt64(nameof(Price), value);
     }
 
+    /// <summary>
+    /// The amount of src token being sold in full. 
+    /// </summary>
     public ulong Amount
     {
         get => PersistentState.GetUInt64(nameof(Amount));
         private set => PersistentState.SetUInt64(nameof(Amount), value);
     }
 
+    /// <summary>
+    /// The sellers wallet address.
+    /// </summary>
     public Address Seller
     {
         get => PersistentState.GetAddress(nameof(Seller));
         private set => PersistentState.SetAddress(nameof(Seller), value);
     }
 
+    /// <summary>
+    /// Status flag for allowing/denying trades.
+    /// </summary>
     public bool IsActive
     {
         get => PersistentState.GetBool(nameof(IsActive));
         private set => PersistentState.SetBool(nameof(IsActive), value);
     }
 
+    /// <summary>
+    /// Fully or partially fills a sell order.
+    /// </summary>
+    /// <param name="amountToBuy">The amount of SRC tokens to buy from the seller in full.</param>
+    /// <returns>Transaction result with trade details.</returns>
     public Transaction Buy(ulong amountToBuy)
     {
         Assert(IsActive, "Contract is not active.");
@@ -96,6 +116,9 @@ public class SimpleSellOrder : SmartContract
         return txResult;
     }
 
+    /// <summary>
+    /// Close the order and prevent further trades against it.
+    /// </summary>
     public void CloseOrder()
     {
         Assert(Message.Sender == Seller);
@@ -103,43 +126,86 @@ public class SimpleSellOrder : SmartContract
         IsActive = false;
     }
 
+    /// <summary>
+    /// Gets the latest details and status of the order.
+    /// </summary>
+    /// <returns>OrderDetails struct with latest order details.</returns>
     public OrderDetails GetOrderDetails()
     {
+        var transferResult = Call(Token, 0, "Allowance", new object[] { Seller, Address });
+        var balance = transferResult.Success ? (ulong)transferResult.ReturnValue : 0;
+
         return new OrderDetails
         {
             Seller = Seller,
             Token = Token,
             Price = Price,
             Amount = Amount,
+            OrderType = nameof(SimpleSellOrder),
             IsActive = IsActive,
-            OrderType = nameof(SimpleSellOrder)
+            Balance = balance
         };
     }
 
     public struct Transaction
     {
+        /// <summary>
+        /// The address of the buyer.
+        /// </summary>
         [Index]
         public Address Buyer;
 
+        /// <summary>
+        /// The price in stratoshis per src token.
+        /// </summary>
         public ulong Price;
 
+        /// <summary>
+        /// The full amount of src tokens traded.
+        /// </summary>
         public ulong Amount;
 
+        /// <summary>
+        /// The block the transaction occured in.
+        /// </summary>
         public ulong Block;
     }
 
     public struct OrderDetails
     {
+        /// <summary>
+        /// The address of the seller.
+        /// </summary>
         public Address Seller;
 
+        /// <summary>
+        /// The address of the token being traded.
+        /// </summary>
         public Address Token;
 
+        /// <summary>
+        /// The price of each token in stratoshis.
+        /// </summary>
         public ulong Price;
 
+        /// <summary>
+        /// The amount of src tokens to sell in full.
+        /// </summary>
         public ulong Amount;
 
+        /// <summary>
+        /// The order type of this trade (SimpleSellOrder)
+        /// </summary>
         public string OrderType;
 
+        /// <summary>
+        /// Flag describing the status of the contract.
+        /// </summary>
         public bool IsActive;
+
+        /// <summary>
+        /// The current allowance this contract has of the src token being traded in stratoshis.
+        /// </summary>
+        public ulong Balance;
     }
 }
