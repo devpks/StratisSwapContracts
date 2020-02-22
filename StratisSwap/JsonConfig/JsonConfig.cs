@@ -91,7 +91,6 @@ public class JsonConfig : SmartContract
     /// <param name="config">JSON payload as string.</param>
     public void UpdateConfig(string config)
     {
-
         Assert(IsAdmin(Message.Sender) || IsContributor(Message.Sender));
 
         UpdateConfigExecute(config);
