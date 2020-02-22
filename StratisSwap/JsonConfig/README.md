@@ -1,8 +1,8 @@
 # JSON Config
 
-A contract used to log small, JSON payloads.
+A contract used to log small JSON payloads.
 
-Allows for teams to have admins and contributors that can log new JSON payloads to the contract for decentralized applications to read from.
+Allows for teams to have admins and contributors that can log JSON strings to the contract for decentralized applications to read from.
 
 ## Creating the Contract
 
@@ -48,7 +48,7 @@ _Logged Role Update_
 {
   "blame": "CNXp26iEE3EbJC9RRLBZ2cYnP7a8L3Z84F",
   "updatedAddress": "CRWDdNei9teh3ancbEcBPMu4d3q575t7aK",
-  "action": "UpdateContributor",
+  "action": "UpdateAdmin",
   "updatedValue": true,
   "block": 12345
 }

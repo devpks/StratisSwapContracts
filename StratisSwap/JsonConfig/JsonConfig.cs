@@ -4,10 +4,10 @@
 public class JsonConfig : SmartContract
 {
     /// <summary>
-    /// Manages small json configurations for software projects.
+    /// Manages small json configurations for decentralized projects.
     /// </summary>
     /// <param name="smartContractState">The execution state for the contract.</param>
-    /// <param name="config">Json payload to log</param>
+    /// <param name="config">JSON payload to log.</param>
     public JsonConfig(ISmartContractState smartContractState, string config)
         : base(smartContractState)
     {
@@ -146,7 +146,7 @@ public class JsonConfig : SmartContract
         public Address Blame;
 
         /// <summary>
-        /// The new json config payload.
+        /// JSON config payload.
         /// </summary>
         public string Config;
 

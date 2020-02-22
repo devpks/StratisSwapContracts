@@ -4,23 +4,24 @@ using Stratis.SmartContracts;
 public class SimpleBuyOrder : SmartContract
 {
     /// <summary>
-    /// Constructor for a buy order setting the token, price, and amount to buy.
+    /// Constructor creating a simple buy order setting the token, price, and amount to buy.
     /// </summary>
     /// <param name="smartContractState">The execution state for the contract.</param>
-    /// <param name="address">The address of the src token being bought.</param>
+    /// <param name="token">The address of the src token being bought.</param>
     /// <param name="price">The price for each src token in stratoshis.</param>
     /// <param name="amount">The amount of src token to buy in full.</param>
     public SimpleBuyOrder(
         ISmartContractState smartContractState, 
-        Address address,
+        Address token,
         ulong price,
         ulong amount) : base (smartContractState)
     {
         Assert(price > 0, "Price must be greater than 0");
         Assert(amount > 0, "Amount must be greater than 0");
         Assert(Message.Value >= amount * price, "Balance is not enough to cover cost");
+        Assert(PersistentState.IsContract(token), "Not a valid token address");
 
-        Token = address;
+        Token = token;
         Price = price;
         Amount = amount;
         Buyer = Message.Sender;
@@ -55,7 +56,7 @@ public class SimpleBuyOrder : SmartContract
     }
 
     /// <summary>
-    /// The buyers wallet address.
+    /// The buyer wallet address.
     /// </summary>
     public Address Buyer
     {

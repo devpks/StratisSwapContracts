@@ -50,6 +50,7 @@ namespace StratisSwap.Tests
             MockPersistentState.Setup(x => x.GetUInt64(nameof(Price))).Returns(price);
             MockPersistentState.Setup(x => x.GetUInt64(nameof(Amount))).Returns(amount);
             MockPersistentState.Setup(x => x.GetBool(nameof(IsActive))).Returns(true);
+            MockPersistentState.Setup(x => x.IsContract(Token)).Returns(true);
 
             return new SimpleBuyOrder(MockContractState.Object, Token, price, amount);
         }

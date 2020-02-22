@@ -4,7 +4,7 @@ using Stratis.SmartContracts;
 public class SimpleSellOrder : SmartContract
 {
     /// <summary>
-    /// Constructor for a sell order setting the token, price, and amount to sell.
+    /// Constructor creating a simple sell order setting the token, price, and amount to sell.
     /// </summary>
     /// <param name="smartContractState">The execution state for the contract.</param>
     /// <param name="token">The address of the src token being sold.</param>
@@ -15,6 +15,7 @@ public class SimpleSellOrder : SmartContract
     {
         Assert(price > 0, "Price must be greater than 0");
         Assert(amount > 0, "Amount must be greater than 0");
+        Assert(PersistentState.IsContract(token), "Not a valid token address");
 
         Token = token;
         Price = price;
@@ -51,7 +52,7 @@ public class SimpleSellOrder : SmartContract
     }
 
     /// <summary>
-    /// The sellers wallet address.
+    /// The seller wallet address.
     /// </summary>
     public Address Seller
     {

@@ -42,6 +42,9 @@ namespace StratisSwap.Tests
         {
             var OrdersHistory = CreateNewOrdersHistoryContract();
 
+            MockPersistentState.Setup(x => x.IsContract(OrderContractAddress)).Returns(true);
+            MockPersistentState.Setup(x => x.IsContract(Token)).Returns(true);
+
             OrdersHistory.AddOrder(OrderContractAddress, Token);
 
             var expectedLog = new OrderLog
@@ -84,6 +87,9 @@ namespace StratisSwap.Tests
         {
             var OrdersHistory = CreateNewOrdersHistoryContract();
             var txHash = "ee345c8b55558760e49fe8706528c8f50a56a022280675094b6654c0abec4463";
+
+            MockPersistentState.Setup(x => x.IsContract(OrderContractAddress)).Returns(true);
+            MockPersistentState.Setup(x => x.IsContract(Token)).Returns(true);
 
             OrdersHistory.UpdateOrder(OrderContractAddress, Token, txHash);
 

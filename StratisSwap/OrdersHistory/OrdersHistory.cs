@@ -4,7 +4,7 @@
 public class OrdersHistory : SmartContract
 {
     /// <summary>
-    /// Constructor for orders contract that logs general info specific to an order.
+    /// Constructor to create a new orders history contract.
     /// </summary>
     /// <param name="smartContractState">The execution state for the contract.</param>
     public OrdersHistory(ISmartContractState smartContractState)
@@ -17,7 +17,8 @@ public class OrdersHistory : SmartContract
     /// <param name="token"></param>
     public void AddOrder(Address order, Address token)
     {
-        Assert(order != Address.Zero && token != Address.Zero);
+        Assert(PersistentState.IsContract(order)
+            && PersistentState.IsContract(token));
 
         Log(new OrderLog
         {
@@ -36,8 +37,8 @@ public class OrdersHistory : SmartContract
     /// <param name="orderTxHash">The transactionHash of the order transaction.</param>
     public void UpdateOrder(Address order, Address token, string orderTxHash)
     {
-        Assert(order != Address.Zero
-            && token != Address.Zero
+        Assert(PersistentState.IsContract(order) 
+            && PersistentState.IsContract(token)
             && !string.IsNullOrEmpty(orderTxHash));
 
         Log(new UpdatedOrderLog
