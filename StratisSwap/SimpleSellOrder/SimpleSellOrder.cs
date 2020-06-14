@@ -106,10 +106,10 @@ public class SimpleSellOrder : SmartContract
 
         Transfer(Seller, cost);
 
-        var balance = Message.Value - cost;
-        if (balance > 0)
+        var change = Message.Value - cost;
+        if (change > 0)
         {
-            Transfer(Message.Sender, balance);
+            Transfer(Message.Sender, change);
         }
 
         Amount -= amountToBuy;
